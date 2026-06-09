@@ -101,10 +101,56 @@ const menuDatabase = [
     }
 ];
 
-// Estado global do carrinho
 let cart = {};
 
-// Função para renderizar os itens do menu
+// CONFIGURAÇÃO DOS HORÁRIOS DA LOJA (Minutos convertidos para facilitar o cálculo)
+const storeHours = {
+    1: { open: 18*60 + 40, close: 23*60 },      // Segunda: 18:40 às 23:00
+    2: { open: 18*60,      close: 23*60 },      // Terça: 18:00 às 23:00
+    3: { open: 18*60,      close: 23*60 },      // Quarta: 18:00 às 23:00
+    4: { open: 21*60 + 28, close: 23*60 },      // Quinta: 21:28 às 23:00
+    5: { open: 18*60 + 26, close: 23*60 + 59 }, // Sexta: 18:26 às 23:59
+    6: { open: 19*60 + 2,  close: 23*60 },      // Sábado: 19:02 às 23:00
+    0: null                                     // Domingo: Fechado
+};
+
+// FUNÇÃO PARA VERIFICAR STATUS COM BASE NO HORÁRIO DE PORTO VELHO (UTC-4)
+function checkStoreStatus() {
+    const statusBadge = document.getElementById('status-loja');
+    if (!statusBadge) return;
+
+    // Obtém o horário atual formatado para o fuso de Porto Velho (America/Porto_Velho)
+    const pvhDateString = new Date().toLocaleString("en-US", {timeZone: "America/Porto_Velho"});
+    const pvhDate = new Date(pvhDateString);
+
+    const dayOfWeek = pvhDate.getDay(); 
+    const currentMinutes = pvhDate.getHours() * 60 + pvhDate.getMinutes();
+
+    const todaySchedule = storeHours[dayOfWeek];
+    let isOpen = false;
+
+    if (todaySchedule) {
+        if (currentMinutes >= todaySchedule.open && currentMinutes <= todaySchedule.close) {
+            isOpen = true;
+        }
+    }
+
+    // Atualiza a interface gráfica com estilo premium
+    if (isOpen) {
+        statusBadge.innerHTML = `<span class="badge-open"><i class="fa-solid fa-circle"></i> ABERTO AGORA</span>`;
+    } else {
+        statusBadge.innerHTML = `<span class="badge-closed"><i class="fa-solid fa-circle"></i> FECHADO NO MOMENTO</span>`;
+    }
+
+    // Destaca o dia atual na tabela de horários
+    const activeDayRow = document.getElementById(`day-${dayOfWeek}`);
+    if (activeDayRow) {
+        activeDayRow.style.background = "rgba(230, 161, 92, 0.1)";
+        activeDayRow.style.borderLeft = "3px solid var(--accent-gold)";
+        activeDayRow.style.paddingLeft = "8px";
+    }
+}
+
 function renderMenu(items) {
     const grid = document.getElementById('menu-grid');
     if (!grid) return;
@@ -139,16 +185,12 @@ function renderMenu(items) {
     });
 }
 
-// Filtros das Abas do Cardápio (CORRIGIDO: Passando o evento explicitamente)
 function filterMenu(category, event) {
     const buttons = document.querySelectorAll('.tab-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
-    
-    // Se o evento foi passado, ativa o botão clicado
     if (event && event.currentTarget) {
         event.currentTarget.classList.add('active');
     }
-
     if(category === 'todos') {
         renderMenu(menuDatabase);
     } else {
@@ -157,7 +199,6 @@ function filterMenu(category, event) {
     }
 }
 
-// Lógica Funcional do Carrinho
 function addToCart(id) {
     const item = menuDatabase.find(i => i.id === id);
     if(cart[id]) {
@@ -166,15 +207,12 @@ function addToCart(id) {
         cart[id] = { ...item, qty: 1 };
     }
     updateCartUI();
-    
-    // Se o modal estiver aberto, atualiza ele dinamicamente
     const modal = document.getElementById('checkout-modal');
     if (modal && modal.classList.contains('open')) {
         renderModalItems();
     }
 }
 
-// REMOVER DO CARRINHO (Nova funcionalidade de suporte)
 function removeFromCart(id) {
     if (cart[id]) {
         if (cart[id].qty > 1) {
@@ -184,8 +222,6 @@ function removeFromCart(id) {
         }
     }
     updateCartUI();
-    
-    // Atualiza o modal ou fecha se esvaziar
     if (Object.keys(cart).length === 0) {
         toggleModal(false);
     } else {
@@ -215,11 +251,9 @@ function updateCartUI() {
     }
 }
 
-// Controle do Modal de Checkout
 function toggleModal(open) {
     const modal = document.getElementById('checkout-modal');
     if(!modal) return;
-    
     if(open) {
         modal.classList.add('open');
         renderModalItems();
@@ -228,7 +262,6 @@ function toggleModal(open) {
     }
 }
 
-// RENDERIZAR ITENS NO MODAL (Melhorado com botões de +/-)
 function renderModalItems() {
     const container = document.getElementById('modal-items');
     const modalTotalStr = document.getElementById('modal-total-val');
@@ -241,19 +274,15 @@ function renderModalItems() {
         totalPrice += (item.price * item.qty);
         const row = document.createElement('div');
         row.className = 'modal-item-row';
-        row.style.display = 'flex';
-        row.style.justifyContent = 'between';
-        row.style.marginBottom = '10px';
-        
         row.innerHTML = `
             <div style="flex: 1;">
                 <strong>${item.name}</strong> 
-                <span style="color:var(--primary-orange, #ff5722)">x${item.qty}</span>
+                <span style="color:var(--accent-gold)">x${item.qty}</span>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span>R$ ${(item.price * item.qty).toFixed(2).replace('.',',')}</span>
-                <button onclick="removeFromCart(${item.id})" style="background:#de1212; color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">-</button>
-                <button onclick="addToCart(${item.id})" style="background:#28a745; color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">+</button>
+                <button onclick="removeFromCart(${item.id})" style="background:#de1212; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold;">-</button>
+                <button onclick="addToCart(${item.id})" style="background:#28a745; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold;">+</button>
             </div>
         `;
         container.appendChild(row);
@@ -262,10 +291,9 @@ function renderModalItems() {
     if (modalTotalStr) modalTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
 }
 
-// Integração com a API do WhatsApp para Envio Automatizado
 function sendWhatsApp() {
     const phoneNumber = "556992673745"; 
-    let textMessage = "🔥 *NOVO PEDIDO - CHICOS BRASA* 🔥\n\n";
+    let textMessage = "🔥 *NOVO PEDIDO - CHICES BRASA* 🔥\n\n";
     let totalPrice = 0;
 
     Object.values(cart).forEach(item => {
@@ -275,20 +303,18 @@ function sendWhatsApp() {
 
     textMessage += `\n💰 *Total do Pedido:* R$ ${totalPrice.toFixed(2).replace('.',',')}\n\n`;
     textMessage += `📍 *Endereço da Loja:* Rua Idalva Fraga Moreira, 3915 - Porto Velho\n`;
-    textMessage += `Por favor, confirme meu pedido e envie a chave Pix/Opções de pagamento!`;
+    textMessage += `Por favor, confirme meu pedido e envie a chave Pix!`;
 
     const encodedMessage = encodeURIComponent(textMessage);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
-    
-    // Limpa carrinho após envio
     cart = {};
     updateCartUI();
     toggleModal(false);
 }
 
-// Inicialização da Página
 document.addEventListener("DOMContentLoaded", () => {
     renderMenu(menuDatabase);
+    checkStoreStatus(); // Executa a validação de horário de PVH
 });
