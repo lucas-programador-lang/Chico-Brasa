@@ -224,6 +224,7 @@ function removeFromCart(id) {
         }
     }
     updateCartUI();
+    // CORREÇÃO: Renderiza as alterações no modal antes de checar encerramento estrutural
     if (Object.keys(cart).length === 0) {
         toggleModal(false);
     } else {
@@ -294,6 +295,9 @@ function renderModalItems() {
 }
 
 function sendWhatsApp() {
+    // CORREÇÃO: Bloqueia disparos espúrios se o carrinho for zerado por manipulação externa
+    if (Object.keys(cart).length === 0) return;
+
     const phoneNumber = "556992673745"; 
     // CORREÇÃO BUG 3: Alinhamento de branding textual (CHICES -> CHICOS)
     let textMessage = "🔥 *NOVO PEDIDO - CHICOS BRASA* 🔥\n\n";
@@ -320,4 +324,14 @@ function sendWhatsApp() {
 document.addEventListener("DOMContentLoaded", () => {
     renderMenu(menuDatabase);
     checkStoreStatus(); // Executa a validação de horário de PVH
+
+    // CORREÇÃO: Eventos de controle do ciclo de vida da UI do Modal (Ação de Fechar)
+    const modal = document.getElementById('checkout-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'checkout-modal' || e.target.classList.contains('close-modal')) {
+                toggleModal(false);
+            }
+        });
+    }
 });
