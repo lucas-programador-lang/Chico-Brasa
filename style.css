@@ -70,13 +70,13 @@ body {
 /* Header & Immersive Hero */
 .hero {
     position: relative;
-    height: 60vh;
-    min-height: 450px;
+    min-height: auto; /* CORREÇÃO BUG INSTAGRAM: Permite expansão flexível dos elementos internos */
+    padding-top: 60px;
+    padding-bottom: 60px; /* Garante área de respiro para os badges e botões */
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 40px 20px;
 }
 
 .hero::before {
@@ -133,12 +133,12 @@ body {
 
 .tagline i {
     font-size: 0.9rem;
-    animation: pulseGlow 2s infinite alternate;
+    animation: pulseGlow 1.5s infinite alternate; /* Sincronizado com animação global */
 }
 
 @keyframes pulseGlow {
-    0% { transform: scale(1); filter: drop-shadow(0 0 2px var(--primary-fire)); }
-    100% { transform: scale(1.2); filter: drop-shadow(0 0 12px var(--primary-fire)); }
+    0% { transform: scale(0.95); filter: drop-shadow(0 0 2px var(--primary-fire)); opacity: 0.6; }
+    100% { transform: scale(1.15); filter: drop-shadow(0 0 12px var(--primary-fire)); opacity: 1; }
 }
 
 .social-links {
@@ -173,7 +173,7 @@ body {
 /* Info Architecture (Address & Timing) */
 .info-container {
     max-width: 1200px;
-    margin: -40px auto 60px auto;
+    margin: 10px auto 60px auto; /* CORREÇÃO BUG INTERFACE: Evita empurrar elementos do topo para trás */
     padding: 0 30px;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -253,6 +253,7 @@ body {
     font-size: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     padding-bottom: 6px;
+    transition: var(--transition-smooth); /* Suaviza destaque de linha do JS */
 }
 
 .hours-grid strong {
@@ -501,7 +502,6 @@ body {
 .cart-info i {
     font-size: 1.8rem;
     color: var(--accent-gold);
-    animation: pulseGlow 1.5s infinite alternate;
 }
 
 .cart-info div {
@@ -697,9 +697,9 @@ footer {
 
 /* Tablets & Small Laptops Landscape */
 @media (max-width: 991px) {
-    .hero { height: 50vh; }
+    .hero { height: auto; min-height: auto; }
     .hero h1 { font-size: 3rem; }
-    .info-container { grid-template-columns: 1fr; margin-top: -20px; }
+    .info-container { grid-template-columns: 1fr; margin-top: 10px; }
     .menu-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
 }
 
@@ -719,7 +719,7 @@ footer {
         justify-content: flex-start;
         padding: 8px;
     }
-    .menu-tabs::-webkit-scrollbar { display: none; } /* Ocultar barra feia no mobile */
+    .menu-tabs::-webkit-scrollbar { display: none; }
     .tab-btn { padding: 10px 20px; font-size: 0.85rem; white-space: nowrap; }
     
     .item-img-container { height: 220px; }
@@ -748,6 +748,8 @@ footer {
 /* Estilização para o Instagram e o Status dinâmico */
 .social-links-top {
     margin-top: 20px;
+    position: relative;
+    z-index: 10;
 }
 
 .instagram-premium-btn {
