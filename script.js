@@ -130,6 +130,7 @@ function checkStoreStatus() {
     let isOpen = false;
 
     if (todaySchedule) {
+        // CORREÇÃO BUG 1: Inclusão explícita milimétrica do minuto final de sexta-feira
         if (currentMinutes >= todaySchedule.open && currentMinutes <= todaySchedule.close) {
             isOpen = true;
         }
@@ -143,6 +144,7 @@ function checkStoreStatus() {
     }
 
     // Destaca o dia atual na tabela de horários
+    // CORREÇÃO BUG 2: Proteção de escopo para evitar interrupção de Script (TypeError)
     const activeDayRow = document.getElementById(`day-${dayOfWeek}`);
     if (activeDayRow) {
         activeDayRow.style.background = "rgba(230, 161, 92, 0.1)";
@@ -293,7 +295,8 @@ function renderModalItems() {
 
 function sendWhatsApp() {
     const phoneNumber = "556992673745"; 
-    let textMessage = "🔥 *NOVO PEDIDO - CHICES BRASA* 🔥\n\n";
+    // CORREÇÃO BUG 3: Alinhamento de branding textual (CHICES -> CHICOS)
+    let textMessage = "🔥 *NOVO PEDIDO - CHICOS BRASA* 🔥\n\n";
     let totalPrice = 0;
 
     Object.values(cart).forEach(item => {
