@@ -52,15 +52,16 @@
     <main class="menu-section">
         <h2 class="section-title">Explore Nosso Cardápio</h2>
         <div class="menu-tabs">
-            <button class="tab-btn active" onclick="filterMenu('todos')">Todos</button>
-            <button class="tab-btn" onclick="filterMenu('combos')">Combos</button>
-            <button class="tab-btn" onclick="filterMenu('burgers')">Burgers Artesanais</button>
-            <button class="tab-btn" onclick="filterMenu('bebidas')">Bebidas</button>
+            <!-- CORREÇÃO: Inclusão do 'event' como parâmetro nas funções de filtro -->
+            <button class="tab-btn active" onclick="filterMenu('todos', event)">Todos</button>
+            <button class="tab-btn" onclick="filterMenu('combos', event)">Combos</button>
+            <button class="tab-btn" onclick="filterMenu('burgers', event)">Burgers Artesanais</button>
+            <button class="tab-btn" onclick="filterMenu('bebidas', event)">Bebidas</button>
         </div>
 
         <!-- Grid de Itens do Cardápio -->
         <div class="menu-grid" id="menu-grid">
-            <!-- Os itens serão injetados dinamicamente via JS para facilitar manutenção -->
+            <!-- Os itens serão injetados dinamicamente via JS -->
         </div>
     </main>
 
@@ -73,7 +74,8 @@
     <div class="cart-floating-bar" id="cart-bar">
         <div class="cart-bar-content">
             <div class="cart-info">
-                <i class="fa-solid fa-basket-shopping-basket"></i>
+                <!-- CORREÇÃO: Corrigida a classe do ícone para o Font Awesome 6 -->
+                <i class="fa-solid fa-basket-shopping"></i>
                 <div>
                     <span id="cart-count">0 itens</span> selecionados
                     <div class="cart-total-price">Total: R$ <span id="cart-total">0,00</span></div>
@@ -90,7 +92,7 @@
             <h2><i class="fa-solid fa-receipt text-fire"></i> Seu Pedido</h2>
             
             <div class="modal-items-list" id="modal-items">
-                <!-- Itens selecionados aparecem aqui -->
+                <!-- Itens selecionados e botões de +/- aparecem aqui via JS -->
             </div>
 
             <div class="modal-total">
