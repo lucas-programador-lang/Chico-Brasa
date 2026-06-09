@@ -107,6 +107,7 @@ let cart = {};
 // Função para renderizar os itens do menu
 function renderMenu(items) {
     const grid = document.getElementById('menu-grid');
+    if (!grid) return;
     grid.innerHTML = "";
 
     items.forEach(item => {
@@ -138,12 +139,15 @@ function renderMenu(items) {
     });
 }
 
-// Filtros das Abas do Cardápio
-function filterMenu(category) {
-    // Altera classe ativa do botão
+// Filtros das Abas do Cardápio (CORRIGIDO: Passando o evento explicitamente)
+function filterMenu(category, event) {
     const buttons = document.querySelectorAll('.tab-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    
+    // Se o evento foi passado, ativa o botão clicado
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
 
     if(category === 'todos') {
         renderMenu(menuDatabase);
@@ -162,6 +166,31 @@ function addToCart(id) {
         cart[id] = { ...item, qty: 1 };
     }
     updateCartUI();
+    
+    // Se o modal estiver aberto, atualiza ele dinamicamente
+    const modal = document.getElementById('checkout-modal');
+    if (modal && modal.classList.contains('open')) {
+        renderModalItems();
+    }
+}
+
+// REMOVER DO CARRINHO (Nova funcionalidade de suporte)
+function removeFromCart(id) {
+    if (cart[id]) {
+        if (cart[id].qty > 1) {
+            cart[id].qty -= 1;
+        } else {
+            delete cart[id];
+        }
+    }
+    updateCartUI();
+    
+    // Atualiza o modal ou fecha se esvaziar
+    if (Object.keys(cart).length === 0) {
+        toggleModal(false);
+    } else {
+        renderModalItems();
+    }
 }
 
 function updateCartUI() {
@@ -178,17 +207,19 @@ function updateCartUI() {
     });
 
     if(totalItems > 0) {
-        cartBar.classList.add('active');
-        cartCountStr.innerText = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
-        cartTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
+        if (cartBar) cartBar.classList.add('active');
+        if (cartCountStr) cartCountStr.innerText = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
+        if (cartTotalStr) cartTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
     } else {
-        cartBar.classList.remove('active');
+        if (cartBar) cartBar.classList.remove('active');
     }
 }
 
 // Controle do Modal de Checkout
 function toggleModal(open) {
     const modal = document.getElementById('checkout-modal');
+    if(!modal) return;
+    
     if(open) {
         modal.classList.add('open');
         renderModalItems();
@@ -197,34 +228,43 @@ function toggleModal(open) {
     }
 }
 
+// RENDERIZAR ITENS NO MODAL (Melhorado com botões de +/-)
 function renderModalItems() {
     const container = document.getElementById('modal-items');
     const modalTotalStr = document.getElementById('modal-total-val');
-    container.innerHTML = "";
+    if (!container) return;
     
+    container.innerHTML = "";
     let totalPrice = 0;
 
     Object.values(cart).forEach(item => {
         totalPrice += (item.price * item.qty);
         const row = document.createElement('div');
         row.className = 'modal-item-row';
+        row.style.display = 'flex';
+        row.style.justifyContent = 'between';
+        row.style.marginBottom = '10px';
+        
         row.innerHTML = `
-            <div>
-                <strong>${item.name}</strong> <span style="color:var(--primary-orange)">x${item.qty}</span>
+            <div style="flex: 1;">
+                <strong>${item.name}</strong> 
+                <span style="color:var(--primary-orange, #ff5722)">x${item.qty}</span>
             </div>
-            <div>
-                R$ ${(item.price * item.qty).toFixed(2).replace('.',',')}
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>R$ ${(item.price * item.qty).toFixed(2).replace('.',',')}</span>
+                <button onclick="removeFromCart(${item.id})" style="background:#de1212; color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">-</button>
+                <button onclick="addToCart(${item.id})" style="background:#28a745; color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer;">+</button>
             </div>
         `;
         container.appendChild(row);
     });
 
-    modalTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
+    if (modalTotalStr) modalTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
 }
 
 // Integração com a API do WhatsApp para Envio Automatizado
 function sendWhatsApp() {
-    const phoneNumber = "556992673745"; // Número formatado
+    const phoneNumber = "556992673745"; 
     let textMessage = "🔥 *NOVO PEDIDO - CHICOS BRASA* 🔥\n\n";
     let totalPrice = 0;
 
@@ -240,7 +280,6 @@ function sendWhatsApp() {
     const encodedMessage = encodeURIComponent(textMessage);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
     
-    // Abre o WhatsApp
     window.open(whatsappUrl, '_blank');
     
     // Limpa carrinho após envio
