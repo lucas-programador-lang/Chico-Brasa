@@ -744,3 +744,73 @@ footer {
     .hero h1 { font-size: 2rem; }
     .btn-group { flex-direction: column; gap: 10px; }
 }
+
+/* Estilização para o Instagram e o Status dinâmico */
+.social-links-top {
+    margin-top: 20px;
+}
+
+.instagram-premium-btn {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    color: #fff !important;
+    padding: 14px 40px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 30px rgba(220, 39, 67, 0.4);
+    transition: all 0.4s ease;
+}
+
+.instagram-premium-btn:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 15px 40px rgba(220, 39, 67, 0.6);
+}
+
+/* Badges de Status (Aberto/Fechado) */
+.status-badge {
+    margin-top: 15px;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}
+
+.badge-open {
+    background: rgba(40, 167, 69, 0.15);
+    color: #2be657;
+    border: 1px solid rgba(43, 230, 87, 0.4);
+    padding: 8px 20px;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 15px rgba(43, 230, 87, 0.2);
+}
+
+.badge-open i {
+    font-size: 0.7rem;
+    animation: pulseGlow 1s infinite alternate;
+}
+
+.badge-closed {
+    background: rgba(222, 18, 18, 0.15);
+    color: #ff4d4d;
+    border: 1px solid rgba(255, 77, 77, 0.4);
+    padding: 8px 20px;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Wrapper do Mapa */
+.map-wrapper {
+    overflow: hidden;
+    margin-top: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
