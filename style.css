@@ -745,11 +745,12 @@ footer {
     .btn-group { flex-direction: column; gap: 10px; }
 }
 
-/* CORREÇÃO BUG 2: Reestruturação de escopo unificado e injeção de profundidade para sobreposição */
+/* CORREÇÃO DEFINITIVA: Injeção de profundidade máxima e margem de segurança contra o bloco 3D inferior */
 .social-links-top {
     margin-top: 20px;
+    margin-bottom: 35px; /* CRÍTICO: Empurra o bloco de baixo para o botão não ser engolido */
     position: relative;
-    z-index: 10;
+    z-index: 999 !important; /* CRÍTICO: Força o botão a flutuar acima de qualquer efeito 3D ou sombra */
 }
 
 .instagram-premium-btn {
