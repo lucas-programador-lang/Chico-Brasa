@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicos Brasa | Cardápio Premium</title>
+    <!-- Fonte e Ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header / Hero Premium -->
+    <header class="hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <img src="logo.png" alt="Chicos Brasa Logo" class="logo-img">
+            <h1>Chicos Brasa</h1>
+            <p class="tagline"><i class="fa-solid fa-fire text-fire"></i> O autêntico sabor defumado na brasa <i class="fa-solid fa-fire text-fire"></i></p>
+            <div class="social-links">
+                <a href="https://instagram.com/chicobrasa" target="_blank" class="social-btn instagram"><i class="fa-brands fa-instagram"></i> @chicobrasa</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Seção de Informações / Horários -->
+    <section class="info-container">
+        <div class="info-card address-3d">
+            <h3><i class="fa-solid fa-location-dot text-fire"></i> Nosso Endereço</h3>
+            <p>Rua Idalva Fraga Moreira, 3915</p>
+            <p>Tancredo Neves - Porto Velho - RO</p>
+            <p>CEP: 76829-596</p>
+            <small class="cnpj">CNPJ: 64.773.635/0001-04</small>
+        </div>
+        
+        <div class="info-card hours-3d">
+            <h3><i class="fa-solid fa-clock text-fire"></i> Horários de Funcionamento</h3>
+            <div class="hours-grid">
+                <span><strong>Segunda:</strong> 18:40 às 23:00</span>
+                <span><strong>Terça:</strong> 18:00 às 23:00</span>
+                <span><strong>Quarta:</strong> 18:00 às 23:00</span>
+                <span><strong>Quinta:</strong> 21:28 às 23:00</span>
+                <span><strong>Sexta:</strong> 18:26 às 23:59</span>
+                <span><strong>Sábado:</strong> 19:02 às 23:00</span>
+                <span class="closed"><strong>Domingo:</strong> Fechado</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filtros do Cardápio -->
+    <main class="menu-section">
+        <h2 class="section-title">Explore Nosso Cardápio</h2>
+        <div class="menu-tabs">
+            <button class="tab-btn active" onclick="filterMenu('todos')">Todos</button>
+            <button class="tab-btn" onclick="filterMenu('combos')">Combos</button>
+            <button class="tab-btn" onclick="filterMenu('burgers')">Burgers Artesanais</button>
+            <button class="tab-btn" onclick="filterMenu('bebidas')">Bebidas</button>
+        </div>
+
+        <!-- Grid de Itens do Cardápio -->
+        <div class="menu-grid" id="menu-grid">
+            <!-- Os itens serão injetados dinamicamente via JS para facilitar manutenção -->
+        </div>
+    </main>
+
+    <!-- Rodapé Informativo -->
+    <footer>
+        <p>&copy; 2026 Chicos Brasa. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- Barra de Carrinho Flutuante Fixa (Estilo Premium) -->
+    <div class="cart-floating-bar" id="cart-bar">
+        <div class="cart-bar-content">
+            <div class="cart-info">
+                <i class="fa-solid fa-basket-shopping-basket"></i>
+                <div>
+                    <span id="cart-count">0 itens</span> selecionados
+                    <div class="cart-total-price">Total: R$ <span id="cart-total">0,00</span></div>
+                </div>
+            </div>
+            <button class="btn-checkout" onclick="toggleModal(true)">Ver Resumo / Fechar Pedido</button>
+        </div>
+    </div>
+
+    <!-- Modal de Checkout (Resumo do Pedido) -->
+    <div class="modal-overlay" id="checkout-modal">
+        <div class="modal-content-3d">
+            <button class="close-modal" onclick="toggleModal(false)">&times;</button>
+            <h2><i class="fa-solid fa-receipt text-fire"></i> Seu Pedido</h2>
+            
+            <div class="modal-items-list" id="modal-items">
+                <!-- Itens selecionados aparecem aqui -->
+            </div>
+
+            <div class="modal-total">
+                <span>Valor Total:</span>
+                <span class="total-highlight">R$ <span id="modal-total-val">0,00</span></span>
+            </div>
+
+            <div class="checkout-actions">
+                <button class="action-btn whatsapp-btn" onclick="sendWhatsApp()">
+                    <i class="fa-brands fa-whatsapp"></i> Concluir via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
