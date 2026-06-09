@@ -37,7 +37,7 @@
 
             <div class="map-wrapper">
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3944.341147551061!2d-63.8540608!3d-8.7538965!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x92325ceec1a3962d%3A0xc07a38a7c647b30d!2sRua%20Idalva%20Fraga%20Moreira%2C%203915%20-%20Tancredo%20Neves%2C%20Porto%20Velho%20-%20RO%2C%2076829-596!5e0!3m2!1spt-BR!2sbr!4v1710000000000!5m2!1spt-BR!2sbr" 
+                    src="https://googleusercontent.com/maps.google.com/0" 
                     width="100%" 
                     height="200" 
                     style="border:0; border-radius: 12px; margin-top: 15px;" 
@@ -76,8 +76,38 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 Chicos Brasa. Todos os direitos reservados.</p>
+        <p>© 2026 Chicos Brasa. Todos os direitos reservados.</p>
     </footer>
 
     <div class="cart-floating-bar" id="cart-bar">
-        <div class="cart-bar-content
+        <div class="cart-bar-content">
+            <div class="cart-info">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <div>
+                    <span id="cart-count">0 itens</span>
+                    <div class="cart-total-price">R$ <span id="cart-total">0,00</span></div>
+                </div>
+            </div>
+            <button class="btn-checkout" onclick="toggleModal(true)">Ver meu Pedido</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="checkout-modal">
+        <div class="modal-content-3d">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <h2><i class="fa-solid fa-basket-shopping text-fire"></i> Seu Pedido</h2>
+            <div class="modal-items-list" id="modal-items">
+                </div>
+            <div class="modal-total">
+                <span>Total:</span>
+                <span class="total-highlight">R$ <span id="modal-total-val">0,00</span></span>
+            </div>
+            <button class="whatsapp-btn" onclick="sendWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> Finalizar pelo WhatsApp
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
