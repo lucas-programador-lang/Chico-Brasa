@@ -70,13 +70,13 @@ body {
 /* Header & Immersive Hero */
 .hero {
     position: relative;
-    height: 60vh;
-    min-height: 450px;
+    height: 65vh; /* Aumentamos um pouco a altura proporcional */
+    min-height: 520px; /* ALTERAÇÃO: Garante espaço suficiente para a logo, textos e o botão */
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 40px 20px;
+    padding: 40px 20px 60px 20px; /* Adicionado um padding na base para empurrar o conteúdo */
 }
 
 .hero::before {
@@ -745,12 +745,14 @@ footer {
     .btn-group { flex-direction: column; gap: 10px; }
 }
 
-/* CORREÇÃO DEFINITIVA: Injeção de profundidade máxima e margem de segurança contra o bloco 3D inferior */
+/* CORREÇÃO DEFINITIVA DE ESPAÇO E CAMADA */
 .social-links-top {
-    margin-top: 20px;
-    margin-bottom: 35px; /* CRÍTICO: Empurra o bloco de baixo para o botão não ser engolido */
+    margin-top: 30px; /* Dá mais espaço entre o status da loja e o botão */
+    margin-bottom: 20px;
     position: relative;
-    z-index: 999 !important; /* CRÍTICO: Força o botão a flutuar acima de qualquer efeito 3D ou sombra */
+    z-index: 9999 !important; /* Camada ultra alta */
+    display: block; /* Garante que ele ocupe o seu próprio espaço na linha */
+    clear: both;
 }
 
 .instagram-premium-btn {
