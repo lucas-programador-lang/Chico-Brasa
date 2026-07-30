@@ -5,7 +5,9 @@
    Update: fundo em camadas, vidro realista, foco acessível, performance
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+/* Fontes (Cinzel + Plus Jakarta Sans) agora são carregadas via <link> no
+   <head> do HTML com preconnect, não por @import — @import bloqueia o
+   parsing do CSS até baixar o arquivo remoto, atrasando a 1ª pintura. */
 
 /* ============================================================
    DESIGN TOKENS — Single Source of Truth
@@ -156,6 +158,32 @@ a, button, input, select, textarea, [tabindex] {
     outline-offset: 3px;
     border-radius: 6px;
     transition: outline-offset var(--duration-fast) var(--ease-smooth);
+}
+
+/* Utilitário usado nos ícones do HTML (estava referenciado mas nunca
+   definido no CSS original, então os ícones ficavam sem cor de destaque) */
+.text-fire {
+    color: var(--fire-core);
+}
+
+/* Link "pular para o conteúdo": fica invisível até receber foco por
+   teclado (Tab), permitindo pular o header no leitor de tela / navegação */
+.skip-link {
+    position: absolute;
+    top: -60px;
+    left: 16px;
+    z-index: 10000;
+    background: var(--gold-pure);
+    color: var(--bg-void);
+    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: top var(--duration-fast) var(--ease-smooth);
+}
+
+.skip-link:focus {
+    top: 16px;
 }
 
 /* Componentes redondos precisam de offset maior pra não cortar o outline */
@@ -530,6 +558,16 @@ a, button, input, select, textarea, [tabindex] {
 .hours-grid .open-time { color: var(--text-primary); }
 .hours-grid .closed,
 .hours-grid .closed strong { color: #ff6b6b; }
+
+/* Dia atual em destaque (aplicado via JS). Antes era feito com
+   estilo inline referenciando var(--accent-gold), variável que não
+   existia — o destaque nunca aparecia. */
+.hours-grid .is-today {
+    background: var(--gold-halo);
+    border-left: 3px solid var(--gold-warm);
+    padding-left: 10px;
+    border-radius: 4px;
+}
 
 /* Map */
 .map-wrapper {
@@ -1067,6 +1105,57 @@ a, button, input, select, textarea, [tabindex] {
     color: var(--text-primary);
     font-weight: 600;
 }
+
+.modal-item-name {
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-item-qty-tag {
+    color: var(--gold-warm);
+    font-weight: 600;
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+.modal-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.modal-item-subtotal {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    min-width: 64px;
+    text-align: right;
+}
+
+.qty-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    color: #fff;
+    font-weight: 800;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    transition: transform var(--duration-fast) var(--ease-bounce), filter var(--duration-fast);
+}
+
+.qty-btn:active { transform: scale(0.9); }
+
+.qty-btn--remove { background: linear-gradient(135deg, #ea1d2c, #c0101e); }
+.qty-btn--add    { background: linear-gradient(135deg, #20b272, #128c7e); }
+
+.qty-btn:hover,
+.qty-btn:focus-visible { filter: brightness(1.18); }
 
 .modal-total {
     display: flex;
