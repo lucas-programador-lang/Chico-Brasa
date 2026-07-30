@@ -3,60 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicos Brasa | Cardápio Premium</title>
+    <title>Chicos Brasa | Cardápio Premium — Porto Velho, RO</title>
+    <meta name="description" content="Cardápio online do Chicos Brasa: burgers artesanais e combos preparados na brasa, em Tancredo Neves, Porto Velho - RO. Peça pelo WhatsApp ou iFood.">
+    <meta name="theme-color" content="#ff4500">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://www.chicosbrasa.com.br/">
+
+    <!-- Open Graph / redes sociais -->
+    <meta property="og:type" content="restaurant.menu">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:title" content="Chicos Brasa | Cardápio Premium">
+    <meta property="og:description" content="O autêntico sabor defumado na brasa. Veja o cardápio completo e peça pelo WhatsApp ou iFood.">
+    <meta property="og:image" content="https://www.chicosbrasa.com.br/logo.png">
+    <meta property="og:url" content="https://www.chicosbrasa.com.br/">
+    <meta name="twitter:card" content="summary_large_image">
 
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Preconnect: acelera a conexão com os domínios de fonte/ícones antes do download -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
+    <!-- Fontes da identidade visual: Cinzel (títulos) + Plus Jakarta Sans (corpo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+
+    <!-- Dados estruturados: ajuda o Google a exibir horário, endereço e cardápio na busca -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        "name": "Chicos Brasa",
+        "image": "https://www.chicosbrasa.com.br/logo.png",
+        "servesCuisine": "Hamburgueria",
+        "priceRange": "R$15 - R$110",
+        "telephone": "+55 69 92673745",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Rua Idalva Fraga Moreira, 3915",
+            "addressLocality": "Porto Velho",
+            "addressRegion": "RO",
+            "postalCode": "76829-596",
+            "addressCountry": "BR"
+        },
+        "openingHoursSpecification": [
+            { "@type": "OpeningHoursSpecification", "dayOfWeek": "Monday", "opens": "18:40", "closes": "23:00" },
+            { "@type": "OpeningHoursSpecification", "dayOfWeek": "Tuesday", "opens": "18:00", "closes": "23:00" },
+            { "@type": "OpeningHoursSpecification", "dayOfWeek": "Wednesday", "opens": "18:00", "closes": "23:00" },
+            { "@type": "OpeningHoursSpecification", "dayOfWeek": "Thursday", "opens": "21:28", "closes": "23:00" },
+            { "@type": "OpeningHoursSpecification", "dayOfWeek": "Friday", "opens": "18:26", "closes": "23:59" },
+            { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "19:02", "closes": "23:00" }
+        ]
+    }
+    </script>
 </head>
 <body>
 
+    <a class="skip-link" href="#main-content">Pular para o cardápio</a>
+
     <header class="hero">
-        <div class="overlay"></div>
         <div class="hero-content">
-            <img src="logo.png" alt="Chicos Brasa Logo" class="logo-img">
+            <img src="logo.png" alt="Chicos Brasa Logo" class="logo-img" width="150" height="150">
             <h1>Chicos Brasa</h1>
-            <p class="tagline"><i class="fa-solid fa-fire text-fire"></i> O autêntico sabor defumado na brasa <i class="fa-solid fa-fire text-fire"></i></p>
-            
-            <div id="status-loja" class="status-badge">Carregando status...</div>
+            <p class="tagline"><i class="fa-solid fa-fire text-fire" aria-hidden="true"></i> O autêntico sabor defumado na brasa <i class="fa-solid fa-fire text-fire" aria-hidden="true"></i></p>
+
+            <div id="status-loja" class="status-badge" role="status" aria-live="polite">Carregando status...</div>
 
             <div class="social-links-top">
-                <a href="https://instagram.com/chicobrasa" target="_blank" class="instagram-premium-btn">
-                    <i class="fa-brands fa-instagram"></i> Siga nosso Instagram @chicobrasa
+                <a href="https://instagram.com/chicobrasa" target="_blank" rel="noopener noreferrer" class="instagram-premium-btn">
+                    <i class="fa-brands fa-instagram" aria-hidden="true"></i> Siga nosso Instagram @chicobrasa
                 </a>
             </div>
         </div>
     </header>
 
-    <section class="info-container">
+    <section class="info-container" aria-label="Informações do restaurante">
         <div class="info-card address-3d">
-            <h3><i class="fa-solid fa-location-dot text-fire"></i> Nosso Endereço</h3>
+            <h3><i class="fa-solid fa-location-dot text-fire" aria-hidden="true"></i> Nosso Endereço</h3>
             <p>Rua Idalva Fraga Moreira, 3915</p>
             <p>Tancredo Neves - Porto Velho - RO</p>
             <p>CEP: 76829-596</p>
             <small class="cnpj">CNPJ: 64.773.635/0001-04</small>
 
             <div class="map-wrapper">
-                <iframe 
+                <iframe
+                    title="Localização do Chicos Brasa no mapa"
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3944.3412589578144!2d-63.8560862!3d-8.7065913!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x92325cb97bb5293d%3A0xc3cf3f990924976c!2sR.%20Idalva%20Fraga%20Moreira%2C%203915%20-%20Tancredo%20Neves%2C%20P%C3%B4rto%20Velho%20-%20RO%2C%2076829-596!5e0!3m2!1spt-BR!2sbr!4v1710000000000!5m2!1spt-BR!2sbr"
-                    width="100%" 
-                    height="200" 
-                    style="border:0; border-radius: 12px; margin-top: 15px;" 
-                    allowfullscreen="" 
-                    loading="lazy" 
+                    width="100%"
+                    height="200"
+                    style="border:0; border-radius: 12px; margin-top: 15px;"
+                    allowfullscreen=""
+                    loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
             </div>
         </div>
-        
+
         <div class="info-card hours-3d">
-            <h3><i class="fa-solid fa-clock text-fire"></i> Horários de Funcionamento</h3>
+            <h3><i class="fa-solid fa-clock text-fire" aria-hidden="true"></i> Horários de Funcionamento</h3>
             <div class="hours-grid">
                 <span id="day-1"><strong>Segunda:</strong> 18:40 às 23:00</span>
                 <span id="day-2"><strong>Terça:</strong> 18:00 às 23:00</span>
@@ -69,17 +118,17 @@
         </div>
     </section>
 
-    <main class="menu-section">
+    <main class="menu-section" id="main-content">
         <h2 class="section-title">Explore Nosso Cardápio</h2>
-        <div class="menu-tabs">
-            <button class="tab-btn active" onclick="filterMenu('todos', event)">Todos</button>
-            <button class="tab-btn" onclick="filterMenu('combos', event)">Combos</button>
-            <button class="tab-btn" onclick="filterMenu('burgers', event)">Burgers Artesanais</button>
-            <button class="tab-btn" onclick="filterMenu('bebidas', event)">Bebidas</button>
+
+        <div class="menu-tabs" id="menu-tabs" role="tablist" aria-label="Filtrar cardápio por categoria">
+            <button type="button" class="tab-btn active" data-category="todos" role="tab" aria-selected="true">Todos</button>
+            <button type="button" class="tab-btn" data-category="combos" role="tab" aria-selected="false">Combos</button>
+            <button type="button" class="tab-btn" data-category="burgers" role="tab" aria-selected="false">Burgers Artesanais</button>
+            <button type="button" class="tab-btn" data-category="bebidas" role="tab" aria-selected="false">Bebidas</button>
         </div>
 
-        <div class="menu-grid" id="menu-grid">
-            </div>
+        <div class="menu-grid" id="menu-grid" aria-live="polite"></div>
     </main>
 
     <footer>
@@ -89,32 +138,31 @@
     <div class="cart-floating-bar" id="cart-bar">
         <div class="cart-bar-content">
             <div class="cart-info">
-                <i class="fa-solid fa-basket-shopping"></i>
+                <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
                 <div>
-                    <span id="cart-count">0 itens</span>
+                    <span id="cart-count" aria-live="polite">0 itens</span>
                     <div class="cart-total-price">R$ <span id="cart-total">0,00</span></div>
                 </div>
             </div>
-            <button class="btn-checkout" onclick="toggleModal(true)">Ver meu Pedido</button>
+            <button type="button" class="btn-checkout" id="open-checkout">Ver meu Pedido</button>
         </div>
     </div>
 
     <div class="modal-overlay" id="checkout-modal">
-        <div class="modal-content-3d">
-            <button class="close-modal" onclick="toggleModal(false)">×</button>
-            <h2><i class="fa-solid fa-basket-shopping text-fire"></i> Seu Pedido</h2>
-            <div class="modal-items-list" id="modal-items">
-                </div>
+        <div class="modal-content-3d" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+            <button type="button" class="close-modal" id="close-checkout" aria-label="Fechar pedido">×</button>
+            <h2 id="checkout-title"><i class="fa-solid fa-basket-shopping text-fire" aria-hidden="true"></i> Seu Pedido</h2>
+            <div class="modal-items-list" id="modal-items"></div>
             <div class="modal-total">
                 <span>Total:</span>
                 <span class="total-highlight">R$ <span id="modal-total-val">0,00</span></span>
             </div>
-            <button class="whatsapp-btn" onclick="sendWhatsApp()">
-                <i class="fa-brands fa-whatsapp"></i> Finalizar pelo WhatsApp
+            <button type="button" class="whatsapp-btn" id="send-whatsapp">
+                <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Finalizar pelo WhatsApp
             </button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
