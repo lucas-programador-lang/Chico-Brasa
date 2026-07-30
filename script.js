@@ -115,7 +115,13 @@ function formatBRL(value) {
     return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// CONFIGURAÇÃO DOS HORÁRIOS DA LOJA (minutos, para facilitar o cálculo)
+// ============================================================
+// HORÁRIO DE FUNCIONAMENTO — fonte única de verdade
+// (antes existiam duas tabelas de horário diferentes: uma em minutos,
+// usada corretamente com o fuso de Porto Velho, e outra em string "HH:MM"
+// que comparava com o horário LOCAL do navegador — em qualquer fuso
+// diferente de Porto Velho isso dava resultado errado. Unificado aqui.)
+// ============================================================
 const storeHours = {
     1: { open: 18 * 60 + 40, close: 23 * 60 },      // Segunda: 18:40 às 23:00
     2: { open: 18 * 60,      close: 23 * 60 },      // Terça: 18:00 às 23:00
@@ -126,45 +132,57 @@ const storeHours = {
     0: null                                          // Domingo: Fechado
 };
 
-// FUNÇÃO PARA VERIFICAR STATUS COM BASE NO HORÁRIO DE PORTO VELHO (UTC-4)
+// Retorna a data/hora atual no fuso de Porto Velho, com fallback pro
+// horário local do navegador caso o Intl/timeZone não seja suportado.
+function getPortoVelhoNow() {
+    try {
+        const pvhDateString = new Date().toLocaleString("en-US", { timeZone: "America/Porto_Velho" });
+        const pvhDate = new Date(pvhDateString);
+        if (isNaN(pvhDate.getTime())) throw new Error("Data inválida");
+        return pvhDate;
+    } catch (err) {
+        console.warn("Fuso horário America/Porto_Velho indisponível, usando horário local.", err);
+        return new Date();
+    }
+}
+
+// Única função que decide se a loja está aberta — usada tanto pelo
+// badge "Aberto/Fechado" quanto pelo toast promocional.
+function getStoreStatus() {
+    const now = getPortoVelhoNow();
+    const dayOfWeek = now.getDay();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todaySchedule = storeHours[dayOfWeek];
+
+    const isOpen = !!todaySchedule &&
+        currentMinutes >= todaySchedule.open &&
+        currentMinutes <= todaySchedule.close;
+
+    return { isOpen, dayOfWeek };
+}
+
+// Atualiza o badge "Aberto agora" / "Fechado" e destaca o dia atual.
+// Roda no carregamento e é chamada de novo periodicamente (ver init),
+// assim o badge não fica "travado" caso a pessoa deixe a aba aberta
+// exatamente na hora de abrir/fechar.
 function checkStoreStatus() {
     const statusBadge = document.getElementById('status-loja');
     if (!statusBadge) return;
 
-    let pvhDate;
-    try {
-        // Obtém o horário atual formatado para o fuso de Porto Velho
-        const pvhDateString = new Date().toLocaleString("en-US", { timeZone: "America/Porto_Velho" });
-        pvhDate = new Date(pvhDateString);
-        if (isNaN(pvhDate.getTime())) throw new Error("Data inválida");
-    } catch (err) {
-        // Navegador sem suporte a timeZone: usa o horário local como fallback
-        console.warn("Fuso horário America/Porto_Velho indisponível, usando horário local.", err);
-        pvhDate = new Date();
-    }
+    const { isOpen, dayOfWeek } = getStoreStatus();
 
-    const dayOfWeek = pvhDate.getDay();
-    const currentMinutes = pvhDate.getHours() * 60 + pvhDate.getMinutes();
-
-    const todaySchedule = storeHours[dayOfWeek];
-    let isOpen = false;
-
-    if (todaySchedule && currentMinutes >= todaySchedule.open && currentMinutes <= todaySchedule.close) {
-        isOpen = true;
-    }
-
-    // Atualiza a interface gráfica com estilo premium
     statusBadge.innerHTML = isOpen
         ? `<span class="badge-open"><i class="fa-solid fa-circle" aria-hidden="true"></i> ABERTO AGORA</span>`
         : `<span class="badge-closed"><i class="fa-solid fa-circle" aria-hidden="true"></i> FECHADO NO MOMENTO</span>`;
 
-    // Destaca o dia atual na tabela de horários
+    document.querySelectorAll('.hours-grid .is-today').forEach(el => el.classList.remove('is-today'));
     const activeDayRow = document.getElementById(`day-${dayOfWeek}`);
-    if (activeDayRow) {
-        activeDayRow.classList.add('is-today');
-    }
+    if (activeDayRow) activeDayRow.classList.add('is-today');
 }
 
+// ============================================================
+// RENDERIZAÇÃO DO CARDÁPIO
+// ============================================================
 function renderMenu(items) {
     const grid = document.getElementById('menu-grid');
     if (!grid) return;
@@ -222,6 +240,9 @@ function filterMenu(category, clickedButton) {
     renderMenu(filtered);
 }
 
+// ============================================================
+// CARRINHO
+// ============================================================
 function addToCart(id) {
     const item = menuDatabase.find(i => i.id === id);
     if (!item) return;
@@ -232,6 +253,7 @@ function addToCart(id) {
         cart[id] = { ...item, qty: 1 };
     }
     updateCartUI();
+    showFeedback(`${item.name} adicionado ao carrinho`, 'add');
 
     const modal = document.getElementById('checkout-modal');
     if (modal && modal.classList.contains('open')) {
@@ -240,14 +262,16 @@ function addToCart(id) {
 }
 
 function removeFromCart(id) {
-    if (cart[id]) {
-        if (cart[id].qty > 1) {
-            cart[id].qty -= 1;
-        } else {
-            delete cart[id];
-        }
+    const item = cart[id];
+    if (!item) return;
+
+    if (item.qty > 1) {
+        cart[id].qty -= 1;
+    } else {
+        delete cart[id];
     }
     updateCartUI();
+    showFeedback(`${item.name} removido do carrinho`, 'remove');
 
     if (Object.keys(cart).length === 0) {
         toggleModal(false);
@@ -273,11 +297,23 @@ function updateCartUI() {
         if (cartBar) cartBar.classList.add('active');
         if (cartCountStr) cartCountStr.textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
         if (cartTotalStr) cartTotalStr.textContent = formatBRL(totalPrice);
+
+        // Pequeno "bump" visual no contador — feedback de que o carrinho mudou
+        [cartCountStr, cartTotalStr].forEach(el => {
+            if (!el) return;
+            el.classList.remove('bump-anim');
+            // eslint-disable-next-line no-unused-expressions
+            void el.offsetWidth; // força reflow pra permitir reiniciar a animação
+            el.classList.add('bump-anim');
+        });
     } else if (cartBar) {
         cartBar.classList.remove('active');
     }
 }
 
+// ============================================================
+// MODAL DE CHECKOUT
+// ============================================================
 function toggleModal(open) {
     const modal = document.getElementById('checkout-modal');
     if (!modal) return;
@@ -341,49 +377,56 @@ function sendWhatsApp() {
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    showFeedback('Pedido enviado! Abrindo o WhatsApp...', 'add');
     cart = {};
     updateCartUI();
     toggleModal(false);
 }
 
-// Horários de funcionamento da hamburgueria (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
-const workingHours = {
-    0: { open: null, close: null },                  // Domingo: Fechado
-    1: { open: "18:40", close: "23:00" },            // Segunda
-    2: { open: "18:00", close: "23:00" },            // Terça
-    3: { open: "18:00", close: "23:00" },            // Quarta
-    4: { open: "21:28", close: "23:00" },            // Quinta
-    5: { open: "18:26", close: "23:59" },            // Sexta
-    6: { open: "19:02", close: "23:00" }             // Sábado
-};
+// ============================================================
+// FEEDBACK TOAST — confirmação rápida (adicionar/remover/enviar)
+// ============================================================
+let feedbackHideTimer = null;
 
-// Função para verificar se a loja está aberta agora
-function isOpenNow() {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const todaySchedule = workingHours[dayOfWeek];
+function showFeedback(message, type = 'add') {
+    const toast = document.getElementById('feedback-toast');
+    const text = document.getElementById('feedback-toast-text');
+    const icon = document.getElementById('feedback-toast-icon');
+    if (!toast || !text) return;
 
-    if (!todaySchedule.open || !todaySchedule.close) {
-        return false;
+    text.textContent = message;
+    toast.classList.toggle('is-remove', type === 'remove');
+    if (icon) {
+        icon.innerHTML = type === 'remove'
+            ? '<i class="fa-solid fa-minus" aria-hidden="true"></i>'
+            : '<i class="fa-solid fa-check" aria-hidden="true"></i>';
     }
 
-    const currentTime = now.toTimeString().slice(0, 5);
-    return currentTime >= todaySchedule.open && currentTime <= todaySchedule.close;
+    toast.classList.add('show');
+    clearTimeout(feedbackHideTimer);
+    feedbackHideTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
-// Frases do toast promocional
+// ============================================================
+// PROMO TOAST — lembrete periódico (cardápio + Instagram)
+// ============================================================
 const promoPhrases = [
-    "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.",
-    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicosbrasa lá no Instagram? 😉",
-    "Psst... o cheirinho de churrasco já tá quase saindo da tela. Corre no cardápio e não esquece de nos seguir!",
-    "Hoje o dia pede um burger na brasa. E a gente pede um seguidor novo no Insta. Combinado? 🔥📲",
-    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicosbrasa!",
-    "Fome batendo? Cardápio aberto. Instagram esperando. Só falta você. 🔥",
-    "Ninguém resiste a um Chico Insano quentinho. Dá uma olhada no cardápio e passa lá no nosso Insta!"
+    { text: "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.", icon: 'fire' },
+    { text: "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicosbrasa lá no Instagram? 😉", icon: 'insta' },
+    { text: "Psst... o cheirinho de churrasco já tá quase saindo da tela. Corre no cardápio e não esquece de nos seguir!", icon: 'fire' },
+    { text: "Hoje o dia pede um burger na brasa. E a gente pede um seguidor novo no Insta. Combinado? 🔥📲", icon: 'insta' },
+    { text: "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicosbrasa!", icon: 'insta' },
+    { text: "Fome batendo? Cardápio aberto. Instagram esperando. Só falta você. 🔥", icon: 'fire' },
+    { text: "Ninguém resiste a um Chico Insano quentinho. Dá uma olhada no cardápio e passa lá no nosso Insta!", icon: 'fire' }
 ];
+
+const PROMO_INTERVAL_MS = 60 * 1000;   // a cada 1 minuto, verifica se pode mostrar
+const PROMO_AUTOHIDE_MS = 30 * 1000;   // some sozinho depois de 30s
 
 let lastPromoPhraseIndex = -1;
 let promoAutoHideTimer = null;
+let promoShownAt = 0;
+let promoRemainingMs = PROMO_AUTOHIDE_MS;
 
 function pickPromoPhrase() {
     let index;
@@ -395,46 +438,84 @@ function pickPromoPhrase() {
 }
 
 function showPromoToast() {
-    // Se a loja estiver fechada, não exibe o toast
-    if (!isOpenNow()) return;
+    // Fora do horário de funcionamento, não faz sentido incentivar o pedido
+    if (!getStoreStatus().isOpen) return;
 
     const toast = document.getElementById('promo-toast');
     const text = document.getElementById('promo-toast-text');
+    const icon = document.getElementById('promo-toast-icon');
     if (!toast || !text) return;
 
     // Não empilha um novo toast em cima de outro já visível
     if (toast.classList.contains('show')) return;
 
-    text.textContent = pickPromoPhrase();
+    const phrase = pickPromoPhrase();
+    text.textContent = phrase.text;
+
+    if (icon) {
+        icon.classList.toggle('is-insta', phrase.icon === 'insta');
+        icon.innerHTML = phrase.icon === 'insta'
+            ? '<i class="fa-brands fa-instagram" aria-hidden="true"></i>'
+            : '<i class="fa-solid fa-fire" aria-hidden="true"></i>';
+    }
+
+    toast.style.setProperty('--promo-duration', `${PROMO_AUTOHIDE_MS}ms`);
+    toast.classList.remove('paused');
     toast.classList.add('show');
 
+    promoShownAt = Date.now();
+    promoRemainingMs = PROMO_AUTOHIDE_MS;
     clearTimeout(promoAutoHideTimer);
-    
-    // Configurado para sumir após 30 segundos (30000ms)
-    promoAutoHideTimer = setTimeout(hidePromoToast, 30000);
+    promoAutoHideTimer = setTimeout(hidePromoToast, PROMO_AUTOHIDE_MS);
 }
 
 function hidePromoToast() {
     const toast = document.getElementById('promo-toast');
     if (!toast) return;
-    toast.classList.remove('show');
+    toast.classList.remove('show', 'paused');
     clearTimeout(promoAutoHideTimer);
 }
 
-function initPromoToast() {
-    const closeBtn = document.getElementById('promo-toast-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', hidePromoToast);
-    }
+function pausePromoToast() {
+    const toast = document.getElementById('promo-toast');
+    if (!toast || !toast.classList.contains('show')) return;
 
-    // Fecha o toast automaticamente se o cliente clicar em botões internos
+    const elapsed = Date.now() - promoShownAt;
+    promoRemainingMs = Math.max(0, promoRemainingMs - elapsed);
+    clearTimeout(promoAutoHideTimer);
+    toast.classList.add('paused');
+}
+
+function resumePromoToast() {
+    const toast = document.getElementById('promo-toast');
+    if (!toast || !toast.classList.contains('show')) return;
+
+    promoShownAt = Date.now();
+    toast.classList.remove('paused');
+    clearTimeout(promoAutoHideTimer);
+    promoAutoHideTimer = setTimeout(hidePromoToast, promoRemainingMs);
+}
+
+function initPromoToast() {
+    const toast = document.getElementById('promo-toast');
+    const closeBtn = document.getElementById('promo-toast-close');
+
+    if (closeBtn) closeBtn.addEventListener('click', hidePromoToast);
+
     document.querySelectorAll('.promo-toast-btn').forEach(btn => {
         btn.addEventListener('click', hidePromoToast);
     });
 
-    // A cada 1 minuto (1 * 60 * 1000), verifica e exibe o toast (se estiver dentro do horário)
-    setInterval(showPromoToast, 1 * 60 * 1000);
+    if (toast) {
+        toast.addEventListener('mouseenter', pausePromoToast);
+        toast.addEventListener('mouseleave', resumePromoToast);
+        toast.addEventListener('focusin', pausePromoToast);
+        toast.addEventListener('focusout', resumePromoToast);
+    }
+
+    setInterval(showPromoToast, PROMO_INTERVAL_MS);
 }
+
 // ============================================================
 // EVENTOS — tudo via addEventListener/delegação, sem onclick inline no HTML
 // ============================================================
@@ -442,6 +523,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMenu(menuDatabase);
     checkStoreStatus();
     initPromoToast();
+
+    // Recalcula o status "aberto/fechado" periodicamente, caso a pessoa
+    // fique com a aba aberta durante a hora de abrir ou fechar a loja
+    setInterval(checkStoreStatus, 60 * 1000);
 
     // Abas de filtro do cardápio
     const tabsContainer = document.getElementById('menu-tabs');
