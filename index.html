@@ -66,7 +66,7 @@
 
     <a class="skip-link" href="#main-content">Pular para o cardápio</a>
 
-    <a href="https://instagram.com/chicosbrasa" target="_blank" rel="noopener noreferrer"
+    <a href="https://instagram.com/chicobrasa" target="_blank" rel="noopener noreferrer"
        class="instagram-float-btn" aria-label="Abrir Instagram do Chicos Brasa (nova aba)">
         <i class="fa-brands fa-instagram" aria-hidden="true"></i>
     </a>
@@ -162,20 +162,26 @@
         </div>
     </div>
 
+    <div class="feedback-toast" id="feedback-toast" role="status" aria-live="polite" aria-atomic="true">
+        <span class="feedback-toast-icon" id="feedback-toast-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+        <span class="feedback-toast-text" id="feedback-toast-text"></span>
+    </div>
+
     <div class="promo-toast" id="promo-toast" role="status" aria-live="polite" aria-atomic="true">
         <button type="button" class="promo-toast-close" id="promo-toast-close" aria-label="Fechar aviso">×</button>
-        <div class="promo-toast-icon"><i class="fa-solid fa-fire" aria-hidden="true"></i></div>
+        <div class="promo-toast-icon" id="promo-toast-icon"><i class="fa-solid fa-fire" aria-hidden="true"></i></div>
         <div class="promo-toast-body">
             <p class="promo-toast-text" id="promo-toast-text"></p>
             <div class="promo-toast-actions">
                 <a href="#menu-grid" class="promo-toast-btn promo-toast-btn--order">
                     <i class="fa-solid fa-burger" aria-hidden="true"></i> Ver cardápio
                 </a>
-                <a href="https://instagram.com/chicosbrasa" target="_blank" rel="noopener noreferrer" class="promo-toast-btn promo-toast-btn--insta">
+                <a href="https://instagram.com/chicobrasa" target="_blank" rel="noopener noreferrer" class="promo-toast-btn promo-toast-btn--insta">
                     <i class="fa-brands fa-instagram" aria-hidden="true"></i> Seguir
                 </a>
             </div>
         </div>
+        <div class="promo-toast-progress" id="promo-toast-progress"></div>
     </div>
 
     <script src="script.js" defer></script>
