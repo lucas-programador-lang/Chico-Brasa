@@ -346,7 +346,36 @@ function sendWhatsApp() {
     toggleModal(false);
 }
 
-// Frases do toast promocional — alternam entre "peça o lanche" e "siga no Insta"
+// Horários de funcionamento da hamburgueria (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
+const workingHours = {
+    0: { open: null, close: null },                  // Domingo: Fechado
+    1: { open: "18:40", close: "23:00" },            // Segunda
+    2: { open: "18:00", close: "23:00" },            // Terça
+    3: { open: "18:00", close: "23:00" },            // Quarta
+    4: { open: "21:28", close: "23:00" },            // Quinta
+    5: { open: "18:26", close: "23:59" },            // Sexta
+    6: { open: "19:02", close: "23:00" }             // Sábado
+};
+
+// Função para verificar se a loja está aberta agora
+function isOpenNow() {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 a 6
+    const todaySchedule = workingHours[dayOfWeek];
+
+    // Se estiver fechado no dia (ex: Domingo)
+    if (!todaySchedule.open || !todaySchedule.close) {
+        return false;
+    }
+
+    // Pega a hora e minuto atuais no formato "HH:MM"
+    const currentTime = now.toTimeString().slice(0, 5);
+
+    // Compara se o horário atual está entre a abertura e o fechamento
+    return currentTime >= todaySchedule.open && currentTime <= todaySchedule.close;
+}
+
+// Frases do toast promocional
 const promoPhrases = [
     "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.",
     "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicosbrasa lá no Instagram? 😉",
@@ -370,6 +399,9 @@ function pickPromoPhrase() {
 }
 
 function showPromoToast() {
+    // Se a loja estiver fechada, não exibe o toast de jeito nenhum
+    if (!isOpenNow()) return;
+
     const toast = document.getElementById('promo-toast');
     const text = document.getElementById('promo-toast-text');
     if (!toast || !text) return;
@@ -381,7 +413,7 @@ function showPromoToast() {
     toast.classList.add('show');
 
     clearTimeout(promoAutoHideTimer);
-    promoAutoHideTimer = setTimeout(hidePromoToast, 3000);
+    promoAutoHideTimer = setTimeout(hidePromoToast, 30000); // 30 segundos visível
 }
 
 function hidePromoToast() {
@@ -397,12 +429,12 @@ function initPromoToast() {
         closeBtn.addEventListener('click', hidePromoToast);
     }
 
-    // Fecha o toast automaticamente se o cliente clicar em "Ver cardápio" ou "Seguir"
+    // Fecha o toast automaticamente se o cliente clicar em botões internos
     document.querySelectorAll('.promo-toast-btn').forEach(btn => {
         btn.addEventListener('click', hidePromoToast);
     });
 
-    // A cada 2 minutos, enquanto a pessoa estiver no site
+    // A cada 1 minuto, verifica o relógio e tenta disparar o toast (se estiver aberto)
     setInterval(showPromoToast, 1 * 60 * 1000);
 }
 
