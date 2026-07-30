@@ -349,10 +349,10 @@ function sendWhatsApp() {
 // Frases do toast promocional — alternam entre "peça o lanche" e "siga no Insta"
 const promoPhrases = [
     "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.",
-    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicobrasa lá no Instagram? 😉",
+    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicosbrasa lá no Instagram? 😉",
     "Psst... o cheirinho de churrasco já tá quase saindo da tela. Corre no cardápio e não esquece de nos seguir!",
     "Hoje o dia pede um burger na brasa. E a gente pede um seguidor novo no Insta. Combinado? 🔥📲",
-    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicobrasa!",
+    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicosbrasa!",
     "Fome batendo? Cardápio aberto. Instagram esperando. Só falta você. 🔥",
     "Ninguém resiste a um Chico Insano quentinho. Dá uma olhada no cardápio e passa lá no nosso Insta!"
 ];
