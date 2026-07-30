@@ -346,13 +346,38 @@ function sendWhatsApp() {
     toggleModal(false);
 }
 
-// Frases do toast promocional — alternam entre "peça o lanche" e "siga no Insta"
+// Horários de funcionamento da hamburgueria (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
+const workingHours = {
+    0: { open: null, close: null },                  // Domingo: Fechado
+    1: { open: "18:40", close: "23:00" },            // Segunda
+    2: { open: "18:00", close: "23:00" },            // Terça
+    3: { open: "18:00", close: "23:00" },            // Quarta
+    4: { open: "21:28", close: "23:00" },            // Quinta
+    5: { open: "18:26", close: "23:59" },            // Sexta
+    6: { open: "19:02", close: "23:00" }             // Sábado
+};
+
+// Função para verificar se a loja está aberta agora
+function isOpenNow() {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const todaySchedule = workingHours[dayOfWeek];
+
+    if (!todaySchedule.open || !todaySchedule.close) {
+        return false;
+    }
+
+    const currentTime = now.toTimeString().slice(0, 5);
+    return currentTime >= todaySchedule.open && currentTime <= todaySchedule.close;
+}
+
+// Frases do toast promocional
 const promoPhrases = [
     "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.",
-    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicobrasa lá no Instagram? 😉",
+    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicosbrasa lá no Instagram? 😉",
     "Psst... o cheirinho de churrasco já tá quase saindo da tela. Corre no cardápio e não esquece de nos seguir!",
     "Hoje o dia pede um burger na brasa. E a gente pede um seguidor novo no Insta. Combinado? 🔥📲",
-    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicobrasa!",
+    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicosbrasa!",
     "Fome batendo? Cardápio aberto. Instagram esperando. Só falta você. 🔥",
     "Ninguém resiste a um Chico Insano quentinho. Dá uma olhada no cardápio e passa lá no nosso Insta!"
 ];
@@ -370,6 +395,9 @@ function pickPromoPhrase() {
 }
 
 function showPromoToast() {
+    // Se a loja estiver fechada, não exibe o toast
+    if (!isOpenNow()) return;
+
     const toast = document.getElementById('promo-toast');
     const text = document.getElementById('promo-toast-text');
     if (!toast || !text) return;
@@ -381,7 +409,9 @@ function showPromoToast() {
     toast.classList.add('show');
 
     clearTimeout(promoAutoHideTimer);
-    promoAutoHideTimer = setTimeout(hidePromoToast, 9000);
+    
+    // Configurado para sumir após 30 segundos (30000ms)
+    promoAutoHideTimer = setTimeout(hidePromoToast, 30000);
 }
 
 function hidePromoToast() {
@@ -397,15 +427,14 @@ function initPromoToast() {
         closeBtn.addEventListener('click', hidePromoToast);
     }
 
-    // Fecha o toast automaticamente se o cliente clicar em "Ver cardápio" ou "Seguir"
+    // Fecha o toast automaticamente se o cliente clicar em botões internos
     document.querySelectorAll('.promo-toast-btn').forEach(btn => {
         btn.addEventListener('click', hidePromoToast);
     });
 
-    // A cada 2 minutos, enquanto a pessoa estiver no site
-    setInterval(showPromoToast, 2 * 60 * 1000);
+    // A cada 1 minuto (1 * 60 * 1000), verifica e exibe o toast (se estiver dentro do horário)
+    setInterval(showPromoToast, 1 * 60 * 1000);
 }
-
 // ============================================================
 // EVENTOS — tudo via addEventListener/delegação, sem onclick inline no HTML
 // ============================================================
