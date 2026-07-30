@@ -108,7 +108,9 @@ body {
         radial-gradient(ellipse 55% 45% at 108% 55%, rgba(60, 28, 8, 0.4) 0%, transparent 55%),
         radial-gradient(ellipse 35% 35% at 50% 105%, rgba(25, 12, 5, 0.55) 0%, transparent 60%),
         linear-gradient(180deg, var(--bg-void) 0%, var(--bg-deep) 45%, var(--bg-void) 100%);
-    background-attachment: fixed;
+    /* fixed quebra/pisca no Safari e Chrome mobile (tratado como "scroll"
+       de forma inconsistente); scroll é o valor seguro em todos os navegadores */
+    background-attachment: scroll;
 }
 
 /* ============================================================
@@ -260,6 +262,8 @@ a, button, input, select, textarea, [tabindex] {
     content: '';
     position: absolute;
     top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 260px;
     height: 260px;
     background: radial-gradient(circle, rgba(255,110,30,0.35) 0%, transparent 70%);
@@ -283,10 +287,12 @@ a, button, input, select, textarea, [tabindex] {
     font-family: 'Cinzel', serif;
     font-size: clamp(2.6rem, 6vw, 5rem);
     font-weight: 900;
-    letter-spacing: 6px;
+    letter-spacing: clamp(1.5px, 1.1vw, 6px);
     text-transform: uppercase;
     line-height: 1.1;
     margin-bottom: 14px;
+    max-width: 100%;
+    overflow-wrap: break-word;
 
     /* Premium gradient text */
     background: linear-gradient(
@@ -638,13 +644,15 @@ a, button, input, select, textarea, [tabindex] {
     font-family: 'Cinzel', serif;
     font-size: clamp(1.8rem, 3.5vw, 2.8rem);
     font-weight: 700;
-    letter-spacing: 4px;
+    letter-spacing: clamp(1.5px, 0.8vw, 4px);
     text-transform: uppercase;
     margin-bottom: 50px;
     position: relative;
     display: inline-block;
     left: 50%;
     transform: translateX(-50%);
+    max-width: 100%;
+    overflow-wrap: break-word;
 
     background: linear-gradient(135deg, var(--text-blaze) 0%, var(--gold-pure) 60%, var(--gold-warm) 100%);
     -webkit-background-clip: text;
@@ -1359,6 +1367,7 @@ footer::before {
     body { padding-bottom: 190px; }
 
     .hero { height: auto; min-height: 500px; padding: 70px 20px 90px; }
+    .hero h1 { font-size: clamp(2rem, 8vw, 3rem); letter-spacing: 3px; }
     .logo-img { width: 120px; height: 120px; }
     .tagline { font-size: 0.82rem; letter-spacing: 2px; }
 
@@ -1421,6 +1430,7 @@ footer::before {
 /* --- Small Mobile (320–480px) --- */
 @media (max-width: 480px) {
     .logo-img { width: 100px; height: 100px; }
+    .hero h1 { font-size: clamp(1.7rem, 9vw, 2.4rem); letter-spacing: 2px; }
     .btn-group { flex-direction: column; gap: 10px; }
     .btn-item { padding: 14px; }
     .info-card { padding: 22px 16px; }
@@ -1429,6 +1439,7 @@ footer::before {
 
 /* --- Tiny (< 360px) --- */
 @media (max-width: 359px) {
+    .hero h1 { font-size: clamp(1.5rem, 9vw, 2rem); letter-spacing: 1.5px; }
     .instagram-premium-btn { padding: 11px 22px; font-size: 0.8rem; }
     .tab-btn { padding: 10px 15px; font-size: 0.78rem; }
 }
