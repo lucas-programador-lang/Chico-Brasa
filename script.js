@@ -360,18 +360,14 @@ const workingHours = {
 // Função para verificar se a loja está aberta agora
 function isOpenNow() {
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 a 6
+    const dayOfWeek = now.getDay();
     const todaySchedule = workingHours[dayOfWeek];
 
-    // Se estiver fechado no dia (ex: Domingo)
     if (!todaySchedule.open || !todaySchedule.close) {
         return false;
     }
 
-    // Pega a hora e minuto atuais no formato "HH:MM"
     const currentTime = now.toTimeString().slice(0, 5);
-
-    // Compara se o horário atual está entre a abertura e o fechamento
     return currentTime >= todaySchedule.open && currentTime <= todaySchedule.close;
 }
 
@@ -399,7 +395,7 @@ function pickPromoPhrase() {
 }
 
 function showPromoToast() {
-    // Se a loja estiver fechada, não exibe o toast de jeito nenhum
+    // Se a loja estiver fechada, não exibe o toast
     if (!isOpenNow()) return;
 
     const toast = document.getElementById('promo-toast');
@@ -413,7 +409,9 @@ function showPromoToast() {
     toast.classList.add('show');
 
     clearTimeout(promoAutoHideTimer);
-    promoAutoHideTimer = setTimeout(hidePromoToast, 30000); // 30 segundos visível
+    
+    // Configurado para sumir após 30 segundos (30000ms)
+    promoAutoHideTimer = setTimeout(hidePromoToast, 30000);
 }
 
 function hidePromoToast() {
@@ -434,7 +432,7 @@ function initPromoToast() {
         btn.addEventListener('click', hidePromoToast);
     });
 
-    // A cada 1 minuto, verifica o relógio e tenta disparar o toast (se estiver aberto)
+    // A cada 1 minuto (1 * 60 * 1000), verifica e exibe o toast (se estiver dentro do horário)
     setInterval(showPromoToast, 1 * 60 * 1000);
 }
 
