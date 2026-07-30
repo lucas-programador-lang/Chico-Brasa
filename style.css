@@ -890,13 +890,23 @@ a, button, input, select, textarea, [tabindex] {
     background: linear-gradient(to right, transparent, var(--border-glow), transparent);
 }
 
-/* --- Card Image --- */
+/* --- Card Image ---
+   As artes do cardápio já vêm com título/descrição desenhados na própria
+   imagem, em posições diferentes em cada uma. Por isso usamos object-fit:
+   contain (mostra a arte inteira) em vez de cover (que cortaria texto de
+   forma inconsistente peça a peça). O fundo escuro do card imita o preto
+   das próprias artes, então a "moldura" fica praticamente invisível. */
 .item-img-container {
     width: 100%;
     height: 250px;
     overflow: hidden;
     position: relative;
-    background: var(--bg-raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse 70% 70% at 50% 40%, rgba(255,90,20,0.10) 0%, transparent 70%),
+        var(--bg-void);
     flex-shrink: 0;
 }
 
@@ -914,7 +924,8 @@ a, button, input, select, textarea, [tabindex] {
 .item-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
     transition: transform 0.9s var(--ease-spring);
 }
 
