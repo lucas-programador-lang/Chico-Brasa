@@ -383,51 +383,6 @@ a, button, input, select, textarea, [tabindex] {
     backdrop-filter: blur(8px);
 }
 
-/* --- Social Link --- */
-.social-links-top {
-    margin-top: 6px;
-    position: relative;
-    z-index: 10;
-}
-
-.instagram-premium-btn {
-    background: linear-gradient(120deg, #f09433 0%, #e6683c 20%, #dc2743 45%, #cc2366 70%, #bc1888 100%);
-    color: #fff;
-    padding: 13px 38px;
-    border-radius: var(--radius-pill);
-    font-weight: 700;
-    font-size: 0.88rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 12px 35px rgba(220, 39, 67, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
-    transition: transform var(--duration-med) var(--ease-spring),
-                box-shadow var(--duration-med) var(--ease-spring);
-    position: relative;
-    overflow: hidden;
-}
-
-.instagram-premium-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, rgba(255,255,255,0.15), transparent 60%);
-    opacity: 0;
-    transition: opacity var(--duration-fast);
-}
-
-.instagram-premium-btn:hover,
-.instagram-premium-btn:focus-visible {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 20px 50px rgba(220, 39, 67, 0.5), inset 0 1px 0 rgba(255,255,255,0.25);
-}
-
-.instagram-premium-btn:hover::before,
-.instagram-premium-btn:focus-visible::before { opacity: 1; }
-
 /* ============================================================
    INSTAGRAM FLOATING ICON — atalho fixo no canto direito
    ============================================================ */
@@ -470,6 +425,159 @@ a, button, input, select, textarea, [tabindex] {
         height: 46px;
         font-size: 1.2rem;
     }
+}
+
+/* ============================================================
+   PROMO TOAST — lembrete periódico (cardápio + Instagram)
+   ============================================================ */
+.promo-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 110px;
+    z-index: 1001;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    max-width: 360px;
+    width: calc(100% - 48px);
+    padding: 20px 44px 20px 20px;
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid var(--border-glow);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(255,69,0,0.1), inset 0 1px 0 var(--glass-highlight-soft);
+
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(24px) scale(0.96);
+    transition: opacity 0.5s var(--ease-spring), transform 0.5s var(--ease-spring);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .promo-toast { background: rgba(14, 11, 9, 0.97); }
+}
+
+.promo-toast.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+/* Linha de brilho no topo, igual aos outros cards do sistema */
+.promo-toast::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 12%; right: 12%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-warm), transparent);
+    opacity: 0.5;
+}
+
+.promo-toast-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--fire-core) 0%, var(--fire-ember) 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    box-shadow: 0 8px 20px rgba(255,69,0,0.35);
+    animation: emberPulse 2.4s ease-in-out infinite alternate;
+}
+
+.promo-toast-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.promo-toast-text {
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    font-weight: 500;
+    margin-bottom: 14px;
+}
+
+.promo-toast-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.promo-toast-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform var(--duration-fast) var(--ease-bounce),
+                box-shadow var(--duration-med) var(--ease-smooth);
+}
+
+.promo-toast-btn:hover,
+.promo-toast-btn:focus-visible {
+    transform: translateY(-2px);
+}
+
+.promo-toast-btn--order {
+    background: linear-gradient(135deg, var(--gold-pure), var(--gold-warm));
+    color: var(--bg-void);
+    box-shadow: 0 6px 18px rgba(240,192,96,0.28);
+}
+
+.promo-toast-btn--insta {
+    background: linear-gradient(120deg, #f09433 0%, #e6683c 25%, #dc2743 55%, #cc2366 80%, #bc1888 100%);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(220,39,67,0.32);
+}
+
+.promo-toast-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--duration-fast), color var(--duration-fast), transform var(--duration-med) var(--ease-bounce);
+}
+
+.promo-toast-close:hover,
+.promo-toast-close:focus-visible {
+    background: rgba(255,255,255,0.14);
+    color: var(--text-blaze);
+    transform: rotate(90deg);
+}
+
+@media (max-width: 767px) {
+    .promo-toast {
+        right: 12px;
+        left: 12px;
+        bottom: 190px;
+        width: auto;
+        max-width: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .promo-toast { transition: opacity 0.2s linear; transform: none !important; }
 }
 
 /* ============================================================
@@ -1440,6 +1548,5 @@ footer::before {
 /* --- Tiny (< 360px) --- */
 @media (max-width: 359px) {
     .hero h1 { font-size: clamp(1.5rem, 9vw, 2rem); letter-spacing: 1.5px; }
-    .instagram-premium-btn { padding: 11px 22px; font-size: 0.8rem; }
     .tab-btn { padding: 10px 15px; font-size: 0.78rem; }
 }
