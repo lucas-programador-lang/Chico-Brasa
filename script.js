@@ -11,7 +11,7 @@ const menuDatabase = [
         price: 99.90,
         description: "O par perfeito para compartilhar bons momentos! 2 Hambúrgueres Artesanais preparados na brasa, 2 batatas fritas crocantes e 2 bebidas refrescantes.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=4cdd55bc-806d-43b7-8a53-9ea30e6b03ea",
-        image: "combo-casal.png"
+        image: "combo-casal.webp"
     },
     {
         id: 2,
@@ -20,7 +20,7 @@ const menuDatabase = [
         price: 32.90,
         description: "Desfrute de um sabor autêntico com o Combo Classic: Burger na Brasa, Batata Rústica crocante e um refrescante Suco de Maracujá de 500ml.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=ef447762-e9c4-464a-be71-c2e5178f2bd4",
-        image: "combo-classic.png"
+        image: "combo-classic.webp"
     },
     {
         id: 3,
@@ -29,7 +29,7 @@ const menuDatabase = [
         price: 42.50,
         description: "A combinação perfeita e monstruosa criada para quem tem fome de verdade. Preparado na brasa original.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=b775441c-c1f8-4040-aeed-cc91d8b1a16d",
-        image: "combo-insano.png"
+        image: "combo-insano.webp"
     },
     {
         id: 4,
@@ -38,7 +38,7 @@ const menuDatabase = [
         price: 34.90,
         description: "Uma combinação sofisticada de Burger na Brasa, Batata Rústica e Suco de Maracujá 500ml, perfeita para quem busca um sabor premium.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=af654a5d-e36b-43db-886f-f6388bfd78c3",
-        image: "combo-prime.png"
+        image: "combo-prime.webp"
     },
     {
         id: 5,
@@ -47,7 +47,7 @@ const menuDatabase = [
         price: 110.90,
         description: "O melhor custo-benefício! 03 Xicos Insanos completos, 03 porções de Batatas Rústicas e 01 Coca-Cola de 2 litros geladinha.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=3062c8b1-8b7f-47b8-8b06-e909c4f72bb3",
-        image: "combo-amigos.png"
+        image: "combo-amigos.webp"
     },
     {
         id: 6,
@@ -56,7 +56,7 @@ const menuDatabase = [
         price: 28.90,
         description: "Pão brioche selado na manteiga, blend bovino 160g suculento na brasa, queijo prato, alface fresca, tomate e maionese artesanal.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=bc7ff6b6-80cc-4e8b-8c02-a14a42e54c83",
-        image: "chico-classic.png"
+        image: "chico-classic.webp"
     },
     {
         id: 7,
@@ -65,7 +65,7 @@ const menuDatabase = [
         price: 32.90,
         description: "Experiência gourmet com pão brioche, blend bovino 160g na brasa, queijo cheddar derretido, bacon crocante, cebola caramelizada e molho barbecue.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=83e074e9-1767-454a-b20c-53bc8e5eab85",
-        image: "brasa-prime.png"
+        image: "brasa-prime.webp"
     },
     {
         id: 8,
@@ -74,7 +74,7 @@ const menuDatabase = [
         price: 34.99,
         description: "O burger insano da casa, ultra recheado, sabor defumado marcante com ingredientes de altíssima qualidade.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=797f2310-004e-4740-8156-7d3b1daf186c",
-        image: "chico-insano.png"
+        image: "chico-insano.webp"
     },
     {
         id: 9,
@@ -83,7 +83,7 @@ const menuDatabase = [
         price: 15.00,
         description: "Suco natural feito na hora, super refrescante. Ideal para acompanhar o seu burger na brasa.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=a9dcded5-56fd-4bf0-8b4c-944c4f2e8710",
-        image: "suco-maracuja.png"
+        image: "suco-maracuja.webp"
     },
     {
         id: 10,
@@ -92,7 +92,7 @@ const menuDatabase = [
         price: 8.00,
         description: "Refrigerante Coca-Cola em lata trincando de gelada.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=8bdce751-3b8f-4106-8cf2-6b4a1f77e0d0",
-        image: "coca-lata.png"
+        image: "coca-lata.webp"
     },
     {
         id: 11,
@@ -101,7 +101,7 @@ const menuDatabase = [
         price: 15.00,
         description: "Perfeita para acompanhar os combos grandes e dividir com a galera.",
         ifoodUrl: "https://www.ifood.com.br/delivery/porto-velho-ro/chicos-brasa-tancredo-neves/a882d49d-215e-48c1-b4d1-2d27783d858c?prato=bc2c0ae4-66b5-4fb8-986f-6a1ba3fe363e",
-        image: "coca-2l.png"
+        image: "coca-2l.webp"
     }
 ];
 
@@ -346,38 +346,13 @@ function sendWhatsApp() {
     toggleModal(false);
 }
 
-// Horários de funcionamento da hamburgueria (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
-const workingHours = {
-    0: { open: null, close: null },                  // Domingo: Fechado
-    1: { open: "18:40", close: "23:00" },            // Segunda
-    2: { open: "18:00", close: "23:00" },            // Terça
-    3: { open: "18:00", close: "23:00" },            // Quarta
-    4: { open: "21:28", close: "23:00" },            // Quinta
-    5: { open: "18:26", close: "23:59" },            // Sexta
-    6: { open: "19:02", close: "23:00" }             // Sábado
-};
-
-// Função para verificar se a loja está aberta agora
-function isOpenNow() {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const todaySchedule = workingHours[dayOfWeek];
-
-    if (!todaySchedule.open || !todaySchedule.close) {
-        return false;
-    }
-
-    const currentTime = now.toTimeString().slice(0, 5);
-    return currentTime >= todaySchedule.open && currentTime <= todaySchedule.close;
-}
-
-// Frases do toast promocional
+// Frases do toast promocional — alternam entre "peça o lanche" e "siga no Insta"
 const promoPhrases = [
     "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.",
-    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicosbrasa lá no Instagram? 😉",
+    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicobrasa lá no Instagram? 😉",
     "Psst... o cheirinho de churrasco já tá quase saindo da tela. Corre no cardápio e não esquece de nos seguir!",
     "Hoje o dia pede um burger na brasa. E a gente pede um seguidor novo no Insta. Combinado? 🔥📲",
-    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicosbrasa!",
+    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicobrasa!",
     "Fome batendo? Cardápio aberto. Instagram esperando. Só falta você. 🔥",
     "Ninguém resiste a um Chico Insano quentinho. Dá uma olhada no cardápio e passa lá no nosso Insta!"
 ];
@@ -395,9 +370,6 @@ function pickPromoPhrase() {
 }
 
 function showPromoToast() {
-    // Se a loja estiver fechada, não exibe o toast
-    if (!isOpenNow()) return;
-
     const toast = document.getElementById('promo-toast');
     const text = document.getElementById('promo-toast-text');
     if (!toast || !text) return;
@@ -409,9 +381,7 @@ function showPromoToast() {
     toast.classList.add('show');
 
     clearTimeout(promoAutoHideTimer);
-    
-    // Configurado para sumir após 30 segundos (30000ms)
-    promoAutoHideTimer = setTimeout(hidePromoToast, 30000);
+    promoAutoHideTimer = setTimeout(hidePromoToast, 9000);
 }
 
 function hidePromoToast() {
@@ -427,13 +397,13 @@ function initPromoToast() {
         closeBtn.addEventListener('click', hidePromoToast);
     }
 
-    // Fecha o toast automaticamente se o cliente clicar em botões internos
+    // Fecha o toast automaticamente se o cliente clicar em "Ver cardápio" ou "Seguir"
     document.querySelectorAll('.promo-toast-btn').forEach(btn => {
         btn.addEventListener('click', hidePromoToast);
     });
 
-    // A cada 1 minuto (1 * 60 * 1000), verifica e exibe o toast (se estiver dentro do horário)
-    setInterval(showPromoToast, 1 * 60 * 1000);
+    // A cada 2 minutos, enquanto a pessoa estiver no site
+    setInterval(showPromoToast, 2 * 60 * 1000);
 }
 
 // ============================================================
