@@ -1,3 +1,7 @@
+// ============================================================
+// CHICOS BRASA — Cardápio & Carrinho
+// ============================================================
+
 // Base de dados estruturada do Cardápio Chicos Brasa
 const menuDatabase = [
     {
@@ -103,15 +107,23 @@ const menuDatabase = [
 
 let cart = {};
 
-// CONFIGURAÇÃO DOS HORÁRIOS DA LOJA (Minutos convertidos para facilitar o cálculo)
+// URL de fallback exibida quando a imagem de um item não carrega
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=500&auto=format&fit=crop";
+
+// Formata número para moeda brasileira (mais robusto que .replace('.', ','))
+function formatBRL(value) {
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// CONFIGURAÇÃO DOS HORÁRIOS DA LOJA (minutos, para facilitar o cálculo)
 const storeHours = {
-    1: { open: 18*60 + 40, close: 23*60 },      // Segunda: 18:40 às 23:00
-    2: { open: 18*60,      close: 23*60 },      // Terça: 18:00 às 23:00
-    3: { open: 18*60,      close: 23*60 },      // Quarta: 18:00 às 23:00
-    4: { open: 21*60 + 28, close: 23*60 },      // Quinta: 21:28 às 23:00
-    5: { open: 18*60 + 26, close: 23*60 + 59 }, // Sexta: 18:26 às 23:59
-    6: { open: 19*60 + 2,  close: 23*60 },      // Sábado: 19:02 às 23:00
-    0: null                                     // Domingo: Fechado
+    1: { open: 18 * 60 + 40, close: 23 * 60 },      // Segunda: 18:40 às 23:00
+    2: { open: 18 * 60,      close: 23 * 60 },      // Terça: 18:00 às 23:00
+    3: { open: 18 * 60,      close: 23 * 60 },      // Quarta: 18:00 às 23:00
+    4: { open: 21 * 60 + 28, close: 23 * 60 },      // Quinta: 21:28 às 23:00
+    5: { open: 18 * 60 + 26, close: 23 * 60 + 59 }, // Sexta: 18:26 às 23:59
+    6: { open: 19 * 60 + 2,  close: 23 * 60 },      // Sábado: 19:02 às 23:00
+    0: null                                          // Domingo: Fechado
 };
 
 // FUNÇÃO PARA VERIFICAR STATUS COM BASE NO HORÁRIO DE PORTO VELHO (UTC-4)
@@ -119,37 +131,37 @@ function checkStoreStatus() {
     const statusBadge = document.getElementById('status-loja');
     if (!statusBadge) return;
 
-    // Obtém o horário atual formatado para o fuso de Porto Velho (America/Porto_Velho)
-    const pvhDateString = new Date().toLocaleString("en-US", {timeZone: "America/Porto_Velho"});
-    const pvhDate = new Date(pvhDateString);
+    let pvhDate;
+    try {
+        // Obtém o horário atual formatado para o fuso de Porto Velho
+        const pvhDateString = new Date().toLocaleString("en-US", { timeZone: "America/Porto_Velho" });
+        pvhDate = new Date(pvhDateString);
+        if (isNaN(pvhDate.getTime())) throw new Error("Data inválida");
+    } catch (err) {
+        // Navegador sem suporte a timeZone: usa o horário local como fallback
+        console.warn("Fuso horário America/Porto_Velho indisponível, usando horário local.", err);
+        pvhDate = new Date();
+    }
 
-    const dayOfWeek = pvhDate.getDay(); 
+    const dayOfWeek = pvhDate.getDay();
     const currentMinutes = pvhDate.getHours() * 60 + pvhDate.getMinutes();
 
     const todaySchedule = storeHours[dayOfWeek];
     let isOpen = false;
 
-    if (todaySchedule) {
-        // CORREÇÃO BUG 1: Inclusão explícita milimétrica do minuto final de sexta-feira
-        if (currentMinutes >= todaySchedule.open && currentMinutes <= todaySchedule.close) {
-            isOpen = true;
-        }
+    if (todaySchedule && currentMinutes >= todaySchedule.open && currentMinutes <= todaySchedule.close) {
+        isOpen = true;
     }
 
     // Atualiza a interface gráfica com estilo premium
-    if (isOpen) {
-        statusBadge.innerHTML = `<span class="badge-open"><i class="fa-solid fa-circle"></i> ABERTO AGORA</span>`;
-    } else {
-        statusBadge.innerHTML = `<span class="badge-closed"><i class="fa-solid fa-circle"></i> FECHADO NO MOMENTO</span>`;
-    }
+    statusBadge.innerHTML = isOpen
+        ? `<span class="badge-open"><i class="fa-solid fa-circle" aria-hidden="true"></i> ABERTO AGORA</span>`
+        : `<span class="badge-closed"><i class="fa-solid fa-circle" aria-hidden="true"></i> FECHADO NO MOMENTO</span>`;
 
     // Destaca o dia atual na tabela de horários
-    // CORREÇÃO BUG 2: Proteção de escopo para evitar interrupção de Script (TypeError)
     const activeDayRow = document.getElementById(`day-${dayOfWeek}`);
     if (activeDayRow) {
-        activeDayRow.style.background = "rgba(230, 161, 92, 0.1)";
-        activeDayRow.style.borderLeft = "3px solid var(--accent-gold)";
-        activeDayRow.style.paddingLeft = "8px";
+        activeDayRow.classList.add('is-today');
     }
 }
 
@@ -158,12 +170,19 @@ function renderMenu(items) {
     if (!grid) return;
     grid.innerHTML = "";
 
+    if (items.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center; color: var(--text-muted);">Nenhum item encontrado nesta categoria.</p>`;
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
     items.forEach(item => {
         const itemCard = document.createElement('div');
         itemCard.className = 'menu-item';
         itemCard.innerHTML = `
             <div class="item-img-container">
-                <img src="${item.image}" alt="${item.name}" class="item-img" onerror="this.src='https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=500&auto=format&fit=crop'">
+                <img src="${item.image}" alt="${item.name}" class="item-img" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
             </div>
             <div class="item-content">
                 <div>
@@ -171,44 +190,49 @@ function renderMenu(items) {
                     <p class="item-description">${item.description}</p>
                 </div>
                 <div class="item-footer">
-                    <span class="item-price">R$ ${item.price.toFixed(2).replace('.',',')}</span>
+                    <span class="item-price"><span class="currency">R$</span> ${formatBRL(item.price)}</span>
                     <div class="btn-group">
-                        <button class="btn-item btn-add-whatsapp" onclick="addToCart(${item.id})">
-                            <i class="fa-solid fa-plus"></i> Pedir pelo Whats
+                        <button type="button" class="btn-item btn-add-whatsapp" data-action="add-to-cart" data-id="${item.id}">
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> Pedir pelo Whats
                         </button>
-                        <a href="${item.ifoodUrl}" target="_blank" class="btn-item btn-ifood">
-                            <i class="fa-solid fa-motorcycle"></i> Ver no iFood
+                        <a href="${item.ifoodUrl}" target="_blank" rel="noopener noreferrer" class="btn-item btn-ifood">
+                            <i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Ver no iFood
                         </a>
                     </div>
                 </div>
             </div>
         `;
-        grid.appendChild(itemCard);
+        fragment.appendChild(itemCard);
     });
+
+    grid.appendChild(fragment);
 }
 
-function filterMenu(category, event) {
-    const buttons = document.querySelectorAll('.tab-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
-    if(category === 'todos') {
-        renderMenu(menuDatabase);
-    } else {
-        const filtered = menuDatabase.filter(item => item.category === category);
-        renderMenu(filtered);
-    }
+function filterMenu(category, clickedButton) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        const isActive = btn === clickedButton;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', String(isActive));
+    });
+
+    const filtered = category === 'todos'
+        ? menuDatabase
+        : menuDatabase.filter(item => item.category === category);
+
+    renderMenu(filtered);
 }
 
 function addToCart(id) {
     const item = menuDatabase.find(i => i.id === id);
-    if(cart[id]) {
+    if (!item) return;
+
+    if (cart[id]) {
         cart[id].qty += 1;
     } else {
         cart[id] = { ...item, qty: 1 };
     }
     updateCartUI();
+
     const modal = document.getElementById('checkout-modal');
     if (modal && modal.classList.contains('open')) {
         renderModalItems();
@@ -224,7 +248,7 @@ function removeFromCart(id) {
         }
     }
     updateCartUI();
-    // CORREÇÃO: Renderiza as alterações no modal antes de checar encerramento estrutural
+
     if (Object.keys(cart).length === 0) {
         toggleModal(false);
     } else {
@@ -236,28 +260,29 @@ function updateCartUI() {
     const cartBar = document.getElementById('cart-bar');
     const cartCountStr = document.getElementById('cart-count');
     const cartTotalStr = document.getElementById('cart-total');
-    
+
     let totalItems = 0;
     let totalPrice = 0;
 
     Object.values(cart).forEach(item => {
         totalItems += item.qty;
-        totalPrice += (item.price * item.qty);
+        totalPrice += item.price * item.qty;
     });
 
-    if(totalItems > 0) {
+    if (totalItems > 0) {
         if (cartBar) cartBar.classList.add('active');
-        if (cartCountStr) cartCountStr.innerText = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
-        if (cartTotalStr) cartTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
-    } else {
-        if (cartBar) cartBar.classList.remove('active');
+        if (cartCountStr) cartCountStr.textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
+        if (cartTotalStr) cartTotalStr.textContent = formatBRL(totalPrice);
+    } else if (cartBar) {
+        cartBar.classList.remove('active');
     }
 }
 
 function toggleModal(open) {
     const modal = document.getElementById('checkout-modal');
-    if(!modal) return;
-    if(open) {
+    if (!modal) return;
+
+    if (open) {
         modal.classList.add('open');
         renderModalItems();
     } else {
@@ -269,67 +294,110 @@ function renderModalItems() {
     const container = document.getElementById('modal-items');
     const modalTotalStr = document.getElementById('modal-total-val');
     if (!container) return;
-    
+
     container.innerHTML = "";
     let totalPrice = 0;
+    const fragment = document.createDocumentFragment();
 
     Object.values(cart).forEach(item => {
-        totalPrice += (item.price * item.qty);
+        totalPrice += item.price * item.qty;
         const row = document.createElement('div');
         row.className = 'modal-item-row';
         row.innerHTML = `
-            <div style="flex: 1;">
-                <strong>${item.name}</strong> 
-                <span style="color:var(--accent-gold)">x${item.qty}</span>
+            <div class="modal-item-name">
+                <strong>${item.name}</strong>
+                <span class="modal-item-qty-tag">x${item.qty}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span>R$ ${(item.price * item.qty).toFixed(2).replace('.',',')}</span>
-                <button onclick="removeFromCart(${item.id})" style="background:#de1212; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold;">-</button>
-                <button onclick="addToCart(${item.id})" style="background:#28a745; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold;">+</button>
+            <div class="modal-item-controls">
+                <span class="modal-item-subtotal">R$ ${formatBRL(item.price * item.qty)}</span>
+                <button type="button" class="qty-btn qty-btn--remove" data-action="decrease" data-id="${item.id}" aria-label="Remover uma unidade de ${item.name}">−</button>
+                <button type="button" class="qty-btn qty-btn--add" data-action="increase" data-id="${item.id}" aria-label="Adicionar uma unidade de ${item.name}">+</button>
             </div>
         `;
-        container.appendChild(row);
+        fragment.appendChild(row);
     });
 
-    if (modalTotalStr) modalTotalStr.innerText = totalPrice.toFixed(2).replace('.', ',');
+    container.appendChild(fragment);
+    if (modalTotalStr) modalTotalStr.textContent = formatBRL(totalPrice);
 }
 
 function sendWhatsApp() {
-    // CORREÇÃO: Bloqueia disparos espúrios se o carrinho for zerado por manipulação externa
     if (Object.keys(cart).length === 0) return;
 
-    const phoneNumber = "556992673745"; 
-    // CORREÇÃO BUG 3: Alinhamento de branding textual (CHICES -> CHICOS)
+    const phoneNumber = "556992673745";
     let textMessage = "🔥 *NOVO PEDIDO - CHICOS BRASA* 🔥\n\n";
     let totalPrice = 0;
 
     Object.values(cart).forEach(item => {
-        textMessage += `▪️ *${item.qty}x* ${item.name} (R$ ${(item.price * item.qty).toFixed(2).replace('.',',')})\n`;
-        totalPrice += (item.price * item.qty);
+        textMessage += `▪️ *${item.qty}x* ${item.name} (R$ ${formatBRL(item.price * item.qty)})\n`;
+        totalPrice += item.price * item.qty;
     });
 
-    textMessage += `\n💰 *Total do Pedido:* R$ ${totalPrice.toFixed(2).replace('.',',')}\n\n`;
+    textMessage += `\n💰 *Total do Pedido:* R$ ${formatBRL(totalPrice)}\n\n`;
     textMessage += `📍 *Endereço da Loja:* Rua Idalva Fraga Moreira, 3915 - Porto Velho\n`;
     textMessage += `Por favor, confirme meu pedido e envie a chave Pix!`;
 
     const encodedMessage = encodeURIComponent(textMessage);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
-    
-    window.open(whatsappUrl, '_blank');
+
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     cart = {};
     updateCartUI();
     toggleModal(false);
 }
 
+// ============================================================
+// EVENTOS — tudo via addEventListener/delegação, sem onclick inline no HTML
+// ============================================================
 document.addEventListener("DOMContentLoaded", () => {
     renderMenu(menuDatabase);
-    checkStoreStatus(); // Executa a validação de horário de PVH
+    checkStoreStatus();
 
-    // CORREÇÃO: Eventos de controle do ciclo de vida da UI do Modal (Ação de Fechar)
+    // Abas de filtro do cardápio
+    const tabsContainer = document.getElementById('menu-tabs');
+    if (tabsContainer) {
+        tabsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.tab-btn');
+            if (!btn) return;
+            filterMenu(btn.dataset.category, btn);
+        });
+    }
+
+    // Botões "Pedir pelo Whats" no grid (delegado, funciona mesmo em cards recriados)
+    const grid = document.getElementById('menu-grid');
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="add-to-cart"]');
+            if (!btn) return;
+            addToCart(Number(btn.dataset.id));
+        });
+    }
+
+    // Botões +/- dentro do modal de pedido (delegado)
+    const modalItems = document.getElementById('modal-items');
+    if (modalItems) {
+        modalItems.addEventListener('click', (e) => {
+            const btn = e.target.closest('.qty-btn');
+            if (!btn) return;
+            const id = Number(btn.dataset.id);
+            if (btn.dataset.action === 'increase') addToCart(id);
+            if (btn.dataset.action === 'decrease') removeFromCart(id);
+        });
+    }
+
+    // Abrir / fechar modal e finalizar pedido
+    document.getElementById('open-checkout')?.addEventListener('click', () => toggleModal(true));
+    document.getElementById('close-checkout')?.addEventListener('click', () => toggleModal(false));
+    document.getElementById('send-whatsapp')?.addEventListener('click', sendWhatsApp);
+
     const modal = document.getElementById('checkout-modal');
     if (modal) {
         modal.addEventListener('click', (e) => {
-            if (e.target.id === 'checkout-modal' || e.target.classList.contains('close-modal')) {
+            if (e.target.id === 'checkout-modal') toggleModal(false);
+        });
+        // Fecha com a tecla Esc — acessibilidade de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) {
                 toggleModal(false);
             }
         });
