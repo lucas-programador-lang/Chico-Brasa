@@ -381,7 +381,7 @@ function showPromoToast() {
     toast.classList.add('show');
 
     clearTimeout(promoAutoHideTimer);
-    promoAutoHideTimer = setTimeout(hidePromoToast, 9000);
+    promoAutoHideTimer = setTimeout(hidePromoToast, 3000);
 }
 
 function hidePromoToast() {
@@ -403,7 +403,7 @@ function initPromoToast() {
     });
 
     // A cada 2 minutos, enquanto a pessoa estiver no site
-    setInterval(showPromoToast, 2 * 60 * 1000);
+    setInterval(showPromoToast, 1 * 60 * 1000);
 }
 
 // ============================================================
