@@ -423,6 +423,50 @@ a, button, input, select, textarea, [tabindex] {
 .instagram-premium-btn:focus-visible::before { opacity: 1; }
 
 /* ============================================================
+   INSTAGRAM FLOATING ICON — atalho fixo no canto direito
+   ============================================================ */
+.instagram-float-btn {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 998;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f09433 0%, #e6683c 20%, #dc2743 45%, #cc2366 70%, #bc1888 100%);
+    color: #fff;
+    font-size: 1.45rem;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 10px 30px rgba(220, 39, 67, 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: transform var(--duration-med) var(--ease-spring),
+                box-shadow var(--duration-med) var(--ease-spring);
+}
+
+.instagram-float-btn:hover,
+.instagram-float-btn:focus-visible {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 16px 40px rgba(220, 39, 67, 0.55), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.instagram-float-btn:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 767px) {
+    .instagram-float-btn {
+        top: 16px;
+        right: 16px;
+        width: 46px;
+        height: 46px;
+        font-size: 1.2rem;
+    }
+}
+
+/* ============================================================
    INFO CARDS — Address & Hours
    ============================================================ */
 .info-container {
