@@ -346,12 +346,73 @@ function sendWhatsApp() {
     toggleModal(false);
 }
 
+// Frases do toast promocional — alternam entre "peça o lanche" e "siga no Insta"
+const promoPhrases = [
+    "🔥 A brasa tá pegando fogo por aqui! Dá uma fugida pro cardápio e já aproveita pra seguir a gente no Insta.",
+    "Seu lanche perfeito tá a um clique de distância. Bora pedir — e de quebra, segue @chicobrasa lá no Instagram? 😉",
+    "Psst... o cheirinho de churrasco já tá quase saindo da tela. Corre no cardápio e não esquece de nos seguir!",
+    "Hoje o dia pede um burger na brasa. E a gente pede um seguidor novo no Insta. Combinado? 🔥📲",
+    "A brasa não espera, e as fotos lá no Insta também não. Vem ver o cardápio e nos seguir @chicobrasa!",
+    "Fome batendo? Cardápio aberto. Instagram esperando. Só falta você. 🔥",
+    "Ninguém resiste a um Chico Insano quentinho. Dá uma olhada no cardápio e passa lá no nosso Insta!"
+];
+
+let lastPromoPhraseIndex = -1;
+let promoAutoHideTimer = null;
+
+function pickPromoPhrase() {
+    let index;
+    do {
+        index = Math.floor(Math.random() * promoPhrases.length);
+    } while (index === lastPromoPhraseIndex && promoPhrases.length > 1);
+    lastPromoPhraseIndex = index;
+    return promoPhrases[index];
+}
+
+function showPromoToast() {
+    const toast = document.getElementById('promo-toast');
+    const text = document.getElementById('promo-toast-text');
+    if (!toast || !text) return;
+
+    // Não empilha um novo toast em cima de outro já visível
+    if (toast.classList.contains('show')) return;
+
+    text.textContent = pickPromoPhrase();
+    toast.classList.add('show');
+
+    clearTimeout(promoAutoHideTimer);
+    promoAutoHideTimer = setTimeout(hidePromoToast, 9000);
+}
+
+function hidePromoToast() {
+    const toast = document.getElementById('promo-toast');
+    if (!toast) return;
+    toast.classList.remove('show');
+    clearTimeout(promoAutoHideTimer);
+}
+
+function initPromoToast() {
+    const closeBtn = document.getElementById('promo-toast-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hidePromoToast);
+    }
+
+    // Fecha o toast automaticamente se o cliente clicar em "Ver cardápio" ou "Seguir"
+    document.querySelectorAll('.promo-toast-btn').forEach(btn => {
+        btn.addEventListener('click', hidePromoToast);
+    });
+
+    // A cada 2 minutos, enquanto a pessoa estiver no site
+    setInterval(showPromoToast, 2 * 60 * 1000);
+}
+
 // ============================================================
 // EVENTOS — tudo via addEventListener/delegação, sem onclick inline no HTML
 // ============================================================
 document.addEventListener("DOMContentLoaded", () => {
     renderMenu(menuDatabase);
     checkStoreStatus();
+    initPromoToast();
 
     // Abas de filtro do cardápio
     const tabsContainer = document.getElementById('menu-tabs');
