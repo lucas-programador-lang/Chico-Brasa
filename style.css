@@ -1562,23 +1562,23 @@ a, button, input, select, textarea, [tabindex] {
 }
 
 /* ============================================================
-   RATING — Avaliação por estrelas (1x por navegador via localStorage)
+   RATING — Avaliação por estrelas, com nota em destaque e
+   distribuição por estrela (estilo "avaliações do Google")
    ============================================================ */
 .rating-section {
-    max-width: 640px;
+    max-width: 720px;
     margin: 80px auto 0;
     padding: 0 30px;
 }
 
 .rating-card {
     position: relative;
-    text-align: center;
     background: var(--glass-bg);
     backdrop-filter: blur(18px) saturate(1.3);
     -webkit-backdrop-filter: blur(18px) saturate(1.3);
     border: 1px solid var(--border-dim);
     border-radius: var(--radius-lg);
-    padding: 40px 32px;
+    padding: 40px 40px 36px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
 }
@@ -1593,31 +1593,139 @@ a, button, input, select, textarea, [tabindex] {
     top: 0; left: 15%; right: 15%;
     height: 1px;
     background: linear-gradient(to right, transparent, var(--gold-warm), transparent);
-    opacity: 0.4;
+    opacity: 0.45;
+}
+
+.rating-heading {
+    text-align: center;
+    margin-bottom: 32px;
 }
 
 .rating-card h3 {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--text-blaze);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .rating-subtitle {
     color: var(--text-muted);
     font-size: 0.92rem;
-    margin-bottom: 26px;
+}
+
+/* --- Visão geral: nota grande + barras de distribuição lado a lado --- */
+.rating-overview {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 40px;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.rating-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-right: 40px;
+    border-right: 1px solid var(--border-dim);
+    min-width: 140px;
+}
+
+.rating-score-number {
+    font-family: 'Cinzel', serif;
+    font-size: 3.2rem;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(125deg, var(--gold-shine), var(--gold-pure) 45%, var(--gold-warm));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 4px 14px rgba(240,192,96,0.25));
+}
+
+.rating-score-stars {
+    font-size: 1.15rem;
+    letter-spacing: 3px;
+    color: var(--gold-warm);
+    margin: 8px 0 6px;
+}
+
+.rating-score-count {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.rating-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rating-bar-row {
+    display: grid;
+    grid-template-columns: 14px 1fr 34px;
+    align-items: center;
+    gap: 10px;
+}
+
+.rating-bar-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+.rating-bar-track {
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-float);
+    overflow: hidden;
+}
+
+.rating-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(to right, var(--gold-deep), var(--gold-pure));
+    transition: width 0.6s var(--ease-spring);
+}
+
+.rating-bar-pct {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-align: right;
+}
+
+.rating-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border-subtle), transparent);
+    margin-bottom: 28px;
+}
+
+/* --- Chamada pra ação: estrelas clicáveis --- */
+.rating-cta {
+    text-align: center;
+}
+
+.rating-cta-label {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .rating-stars {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 22px;
 }
 
 .rating-star {
@@ -1655,42 +1763,76 @@ a, button, input, select, textarea, [tabindex] {
     transform: none;
 }
 
+/* --- Estado "obrigado", depois de avaliar --- */
 .rating-thanks {
     display: none;
-    color: var(--gold-pure);
-    font-weight: 600;
-    font-size: 0.95rem;
-    margin-bottom: 22px;
+    align-items: center;
+    gap: 16px;
+    background: var(--gold-halo);
+    border: 1px solid var(--border-glow);
+    border-radius: var(--radius-md);
+    padding: 18px 22px;
 }
 
-.rating-card.has-rated .rating-thanks { display: block; }
-.rating-card.has-rated .rating-subtitle { display: none; }
+.rating-card.has-rated .rating-cta { display: none; }
+.rating-card.has-rated .rating-thanks { display: flex; }
 
-.rating-summary {
+.rating-thanks-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-dim);
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+    background: linear-gradient(135deg, #20b272, #128c7e);
+    color: #fff;
+    font-size: 1.1rem;
+    box-shadow: 0 8px 20px rgba(32,178,114,0.35);
 }
 
-.rating-summary-stars {
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    background: linear-gradient(125deg, var(--gold-shine), var(--gold-pure) 50%, var(--gold-warm));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.rating-thanks strong {
+    color: var(--text-blaze);
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.rating-thanks p {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+/* Pulso curto quando a nota muda em tempo real (outro cliente avaliou) */
+@keyframes ratingScoreUpdate {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+
+.rating-score-number.live-update {
+    animation: ratingScoreUpdate 0.5s var(--ease-bounce);
+}
+
+@media (max-width: 700px) {
+    .rating-overview {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .rating-score {
+        border-right: none;
+        border-bottom: 1px solid var(--border-dim);
+        padding-right: 0;
+        padding-bottom: 24px;
+    }
 }
 
 @media (max-width: 480px) {
     .rating-section { padding: 0 16px; margin-top: 60px; }
-    .rating-card { padding: 32px 20px; }
+    .rating-card { padding: 30px 22px; }
     .rating-stars { gap: 6px; }
+    .rating-score-number { font-size: 2.6rem; }
+    .rating-thanks { flex-direction: column; text-align: center; }
 }
 
 /* ============================================================
