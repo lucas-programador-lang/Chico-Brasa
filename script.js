@@ -253,7 +253,7 @@ function addToCart(id) {
         cart[id] = { ...item, qty: 1 };
     }
     updateCartUI();
-    showFeedback(`${item.name} adicionado ao carrinho`, 'add');
+    showFeedback(item.name, cart[id].qty, 'add');
 
     const modal = document.getElementById('checkout-modal');
     if (modal && modal.classList.contains('open')) {
@@ -265,13 +265,16 @@ function removeFromCart(id) {
     const item = cart[id];
     if (!item) return;
 
+    const name = item.name;
+
     if (item.qty > 1) {
         cart[id].qty -= 1;
+        showFeedback(name, cart[id].qty, 'remove');
     } else {
         delete cart[id];
+        showFeedback(name, 0, 'remove');
     }
     updateCartUI();
-    showFeedback(`${item.name} removido do carrinho`, 'remove');
 
     if (Object.keys(cart).length === 0) {
         toggleModal(false);
@@ -377,7 +380,7 @@ function sendWhatsApp() {
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-    showFeedback('Pedido enviado! Abrindo o WhatsApp...', 'add');
+    showFeedback('Pedido enviado! Abrindo o WhatsApp...');
     cart = {};
     updateCartUI();
     toggleModal(false);
@@ -388,13 +391,33 @@ function sendWhatsApp() {
 // ============================================================
 let feedbackHideTimer = null;
 
-function showFeedback(message, type = 'add') {
+/**
+ * Mostra o toast de feedback.
+ * @param {string} label - nome do item (ou uma mensagem simples, se qty for null)
+ * @param {number|null} qty - quantidade atual do item no carrinho.
+ *   > 0  → mostra o chip "Nx" antes do nome (ex: "2x Combo Casal no carrinho")
+ *   0    → item foi totalmente removido (ex: "Combo Casal removido do carrinho")
+ *   null → `label` é usado como mensagem livre, sem chip (ex: envio ao WhatsApp)
+ * @param {'add'|'remove'} type - cor/ícone do toast
+ */
+function showFeedback(label, qty = null, type = 'add') {
     const toast = document.getElementById('feedback-toast');
     const text = document.getElementById('feedback-toast-text');
     const icon = document.getElementById('feedback-toast-icon');
     if (!toast || !text) return;
 
-    text.textContent = message;
+    if (qty === null) {
+        text.textContent = label;
+    } else if (qty === 0) {
+        text.textContent = `${label} removido do carrinho`;
+    } else if (type === 'add' && qty === 1) {
+        // Primeira unidade adicionada: mensagem simples, sem "1x"
+        text.textContent = `${label} adicionado ao carrinho`;
+    } else {
+        // Qualquer outra contagem (2+, ou 1 restante após remover uma unidade)
+        text.innerHTML = `<span class="feedback-toast-qty">${qty}x</span> ${label} no carrinho`;
+    }
+
     toast.classList.toggle('is-remove', type === 'remove');
     if (icon) {
         icon.innerHTML = type === 'remove'
@@ -402,7 +425,10 @@ function showFeedback(message, type = 'add') {
             : '<i class="fa-solid fa-check" aria-hidden="true"></i>';
     }
 
+    toast.classList.remove('show');
+    void toast.offsetWidth; // reinicia a animação mesmo se o toast já estava visível
     toast.classList.add('show');
+
     clearTimeout(feedbackHideTimer);
     feedbackHideTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
@@ -517,12 +543,134 @@ function initPromoToast() {
 }
 
 // ============================================================
+// AVALIAÇÃO POR ESTRELAS
+// ------------------------------------------------------------
+// IMPORTANTE: este é um site 100% estático (sem backend/banco de
+// dados). Por isso a contagem de avaliações fica salva no
+// localStorage do NAVEGADOR de cada pessoa — ou seja, é um total
+// por dispositivo, não um contador global somando todos os
+// clientes do restaurante. Pra ter um contador global de verdade,
+// seria necessário um backend simples (ex: Firebase, Google
+// Sheets + Apps Script, etc.) recebendo as avaliações via API.
+// ============================================================
+const RATING_KEYS = {
+    count: 'chicosbrasa_rating_count',
+    sum: 'chicosbrasa_rating_sum',
+    myRating: 'chicosbrasa_my_rating'
+};
+
+function getRatingStats() {
+    const count = Number(localStorage.getItem(RATING_KEYS.count)) || 0;
+    const sum = Number(localStorage.getItem(RATING_KEYS.sum)) || 0;
+    const myRating = Number(localStorage.getItem(RATING_KEYS.myRating)) || 0;
+    return { count, sum, myRating, average: count > 0 ? sum / count : 0 };
+}
+
+function renderRatingSummary() {
+    const summaryStars = document.getElementById('rating-summary-stars');
+    const summaryText = document.getElementById('rating-summary-text');
+    if (!summaryStars || !summaryText) return;
+
+    const { count, average } = getRatingStats();
+
+    if (count === 0) {
+        summaryStars.textContent = '☆☆☆☆☆';
+        summaryText.textContent = 'Seja o primeiro a avaliar!';
+        return;
+    }
+
+    const roundedAvg = Math.round(average);
+    summaryStars.textContent = '★★★★★'.slice(0, roundedAvg) + '☆☆☆☆☆'.slice(0, 5 - roundedAvg);
+    summaryText.textContent = `${average.toFixed(1)} de 5 · ${count} ${count === 1 ? 'avaliação' : 'avaliações'}`;
+}
+
+function paintStars(upTo) {
+    document.querySelectorAll('.rating-star').forEach(star => {
+        const value = Number(star.dataset.value);
+        star.classList.toggle('is-hover', value <= upTo);
+    });
+}
+
+function lockRatingWidget(myRating) {
+    const card = document.querySelector('.rating-card');
+    const starsWrap = document.getElementById('rating-stars');
+    if (!card || !starsWrap) return;
+
+    card.classList.add('has-rated');
+    starsWrap.classList.add('is-locked');
+
+    document.querySelectorAll('.rating-star').forEach(star => {
+        const value = Number(star.dataset.value);
+        const filled = value <= myRating;
+        star.classList.toggle('is-selected', filled);
+        star.setAttribute('aria-checked', String(filled));
+        star.tabIndex = -1;
+    });
+}
+
+function submitRating(value) {
+    const { count, sum, myRating } = getRatingStats();
+
+    // Trava real: se esse navegador já votou, ignora novos cliques
+    if (myRating > 0) return;
+
+    const newCount = count + 1;
+    const newSum = sum + value;
+
+    localStorage.setItem(RATING_KEYS.count, String(newCount));
+    localStorage.setItem(RATING_KEYS.sum, String(newSum));
+    localStorage.setItem(RATING_KEYS.myRating, String(value));
+
+    lockRatingWidget(value);
+    renderRatingSummary();
+    showFeedback(`Obrigado pela avaliação de ${value} estrela${value > 1 ? 's' : ''}!`);
+}
+
+function initRatingWidget() {
+    const starsWrap = document.getElementById('rating-stars');
+    if (!starsWrap) return;
+
+    renderRatingSummary();
+
+    const { myRating } = getRatingStats();
+    if (myRating > 0) {
+        lockRatingWidget(myRating);
+        return;
+    }
+
+    starsWrap.addEventListener('click', (e) => {
+        const star = e.target.closest('.rating-star');
+        if (!star) return;
+        submitRating(Number(star.dataset.value));
+    });
+
+    // Preview visual ao passar o mouse (desktop)
+    starsWrap.addEventListener('mouseover', (e) => {
+        const star = e.target.closest('.rating-star');
+        if (!star) return;
+        paintStars(Number(star.dataset.value));
+    });
+    starsWrap.addEventListener('mouseleave', () => paintStars(0));
+
+    // Preview visual ao navegar pelas estrelas com o teclado
+    starsWrap.addEventListener('focusin', (e) => {
+        const star = e.target.closest('.rating-star');
+        if (!star) return;
+        paintStars(Number(star.dataset.value));
+    });
+    starsWrap.addEventListener('focusout', (e) => {
+        if (!starsWrap.contains(e.relatedTarget)) paintStars(0);
+    });
+}
+
+// ============================================================
 // EVENTOS — tudo via addEventListener/delegação, sem onclick inline no HTML
 // ============================================================
 document.addEventListener("DOMContentLoaded", () => {
     renderMenu(menuDatabase);
     checkStoreStatus();
     initPromoToast();
+    initRatingWidget();
 
     // Recalcula o status "aberto/fechado" periodicamente, caso a pessoa
     // fique com a aba aberta durante a hora de abrir ou fechar a loja
