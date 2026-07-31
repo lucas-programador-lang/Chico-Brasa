@@ -91,6 +91,14 @@
 html {
     scroll-behavior: smooth;
     color-scheme: dark;
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* Rede de segurança: qualquer imagem/mídia sem width explícito não pode
+   estourar a largura do elemento pai (causa clássica de scroll horizontal) */
+img, svg, video, iframe, embed, object {
+    max-width: 100%;
 }
 
 body {
@@ -624,18 +632,25 @@ a, button, input, select, textarea, [tabindex] {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 22px;
+    max-width: min(90vw, 420px);
+    width: max-content;
+    padding: 12px 22px 12px 18px;
     background: var(--glass-bg-strong);
     backdrop-filter: blur(20px) saturate(1.4);
     -webkit-backdrop-filter: blur(20px) saturate(1.4);
     border: 1px solid var(--border-glow);
+    border-left: 3px solid #20b272;
     border-radius: var(--radius-pill);
     box-shadow: 0 16px 40px rgba(0,0,0,0.6), inset 0 1px 0 var(--glass-highlight-soft);
 
     opacity: 0;
     pointer-events: none;
-    transform: translateX(-50%) translateY(-16px);
+    transform: translateX(-50%) translateY(-16px) scale(0.94);
     transition: opacity 0.35s var(--ease-spring), transform 0.35s var(--ease-spring);
+}
+
+.feedback-toast.is-remove {
+    border-left-color: #ea1d2c;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -644,31 +659,49 @@ a, button, input, select, textarea, [tabindex] {
 
 .feedback-toast.show {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.feedback-toast-qty {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 22px;
+    padding: 0 8px;
+    background: linear-gradient(135deg, var(--gold-pure), var(--gold-warm));
+    color: var(--bg-void);
+    font-weight: 800;
+    font-size: 0.76rem;
+    border-radius: var(--radius-pill);
 }
 
 .feedback-toast-icon {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #20b272, #128c7e);
     color: #fff;
-    font-size: 0.7rem;
+    font-size: 0.76rem;
+    box-shadow: 0 4px 14px rgba(32,178,114,0.45);
 }
 
 .feedback-toast.is-remove .feedback-toast-icon {
     background: linear-gradient(135deg, #ea1d2c, #c0101e);
+    box-shadow: 0 4px 14px rgba(234,29,44,0.45);
 }
 
 .feedback-toast-text {
     color: var(--text-primary);
     font-size: 0.86rem;
     font-weight: 600;
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.4;
 }
 
 @media (max-width: 480px) {
@@ -898,14 +931,23 @@ a, button, input, select, textarea, [tabindex] {
     background: var(--glass-bg-strong);
     padding: 8px;
     border-radius: var(--radius-pill);
-    max-width: max-content;
+    max-width: 100%;
+    width: max-content;
     margin-left: auto;
     margin-right: auto;
     border: 1px solid var(--border-dim);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--shadow-sm), inset 0 1px 0 var(--glass-highlight-soft);
+    /* Sempre pode rolar horizontalmente se não couber — vale pra qualquer
+       largura de tela, não só abaixo do breakpoint mobile (ex: tablets
+       entre 768–900px, onde os 4 botões juntos podiam não caber) */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
+
+.menu-tabs::-webkit-scrollbar { display: none; }
 
 .tab-btn {
     background: transparent;
@@ -1517,6 +1559,138 @@ a, button, input, select, textarea, [tabindex] {
 .whatsapp-btn:focus-visible {
     transform: translateY(-4px) scale(1.01);
     box-shadow: 0 22px 50px rgba(37, 211, 102, 0.42);
+}
+
+/* ============================================================
+   RATING — Avaliação por estrelas (1x por navegador via localStorage)
+   ============================================================ */
+.rating-section {
+    max-width: 640px;
+    margin: 80px auto 0;
+    padding: 0 30px;
+}
+
+.rating-card {
+    position: relative;
+    text-align: center;
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    border: 1px solid var(--border-dim);
+    border-radius: var(--radius-lg);
+    padding: 40px 32px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .rating-card { background: linear-gradient(150deg, var(--bg-surface) 0%, var(--bg-raised) 100%); }
+}
+
+.rating-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 15%; right: 15%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-warm), transparent);
+    opacity: 0.4;
+}
+
+.rating-card h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-blaze);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.rating-subtitle {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin-bottom: 26px;
+}
+
+.rating-stars {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.rating-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    font-size: clamp(1.8rem, 6vw, 2.3rem);
+    line-height: 1;
+    color: var(--bg-float);
+    -webkit-text-stroke: 1px var(--border-glow);
+    transition: transform var(--duration-fast) var(--ease-bounce),
+                color var(--duration-fast) var(--ease-smooth);
+}
+
+.rating-star:hover,
+.rating-star:focus-visible {
+    transform: scale(1.18) rotate(-4deg);
+}
+
+/* Preenchimento dourado até a estrela sob o mouse/teclado (preview) ou
+   até a nota já escolhida (classes aplicadas via JS) */
+.rating-star.is-hover,
+.rating-star.is-selected {
+    color: var(--gold-pure);
+    -webkit-text-stroke: 1px var(--gold-warm);
+    filter: drop-shadow(0 0 10px rgba(240,192,96,0.4));
+}
+
+.rating-stars.is-locked .rating-star {
+    cursor: default;
+}
+
+.rating-stars.is-locked .rating-star:hover {
+    transform: none;
+}
+
+.rating-thanks {
+    display: none;
+    color: var(--gold-pure);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 22px;
+}
+
+.rating-card.has-rated .rating-thanks { display: block; }
+.rating-card.has-rated .rating-subtitle { display: none; }
+
+.rating-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-dim);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.rating-summary-stars {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    background: linear-gradient(125deg, var(--gold-shine), var(--gold-pure) 50%, var(--gold-warm));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@media (max-width: 480px) {
+    .rating-section { padding: 0 16px; margin-top: 60px; }
+    .rating-card { padding: 32px 20px; }
+    .rating-stars { gap: 6px; }
 }
 
 /* ============================================================
