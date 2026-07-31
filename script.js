@@ -545,43 +545,90 @@ function initPromoToast() {
 // ============================================================
 // AVALIAÇÃO POR ESTRELAS
 // ------------------------------------------------------------
-// IMPORTANTE: este é um site 100% estático (sem backend/banco de
-// dados). Por isso a contagem de avaliações fica salva no
-// localStorage do NAVEGADOR de cada pessoa — ou seja, é um total
-// por dispositivo, não um contador global somando todos os
-// clientes do restaurante. Pra ter um contador global de verdade,
-// seria necessário um backend simples (ex: Firebase, Google
-// Sheets + Apps Script, etc.) recebendo as avaliações via API.
+// Tem DOIS modos, escolhidos automaticamente:
+//
+// 1) MODO FIREBASE (tempo real, entre TODOS os clientes) — ativo
+//    quando o bloco <script type="module"> no index.html tiver as
+//    chaves do seu projeto Firebase preenchidas. Nesse modo, as
+//    avaliações somam pra todo mundo e a tela atualiza sozinha
+//    assim que qualquer cliente avalia, em qualquer aparelho.
+//
+// 2) MODO LOCAL (fallback) — usado enquanto o Firebase não estiver
+//    configurado. A contagem fica só no localStorage do navegador
+//    de cada pessoa (não soma entre aparelhos diferentes).
+//
+// Em ambos os modos, o navegador guarda "chicosbrasa_my_rating"
+// pra impedir que a MESMA pessoa vote de novo pelo mesmo aparelho.
 // ============================================================
 const RATING_KEYS = {
     count: 'chicosbrasa_rating_count',
     sum: 'chicosbrasa_rating_sum',
+    dist: 'chicosbrasa_rating_dist',
     myRating: 'chicosbrasa_my_rating'
 };
 
-function getRatingStats() {
-    const count = Number(localStorage.getItem(RATING_KEYS.count)) || 0;
-    const sum = Number(localStorage.getItem(RATING_KEYS.sum)) || 0;
-    const myRating = Number(localStorage.getItem(RATING_KEYS.myRating)) || 0;
-    return { count, sum, myRating, average: count > 0 ? sum / count : 0 };
+const EMPTY_DIST = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+function getMyRating() {
+    return Number(localStorage.getItem(RATING_KEYS.myRating)) || 0;
 }
 
-function renderRatingSummary() {
-    const summaryStars = document.getElementById('rating-summary-stars');
-    const summaryText = document.getElementById('rating-summary-text');
-    if (!summaryStars || !summaryText) return;
+// --- Modo local (localStorage) ---
+function getLocalRatingData() {
+    const count = Number(localStorage.getItem(RATING_KEYS.count)) || 0;
+    const sum = Number(localStorage.getItem(RATING_KEYS.sum)) || 0;
+    let dist = EMPTY_DIST;
+    try {
+        dist = { ...EMPTY_DIST, ...JSON.parse(localStorage.getItem(RATING_KEYS.dist) || '{}') };
+    } catch { /* ignora JSON inválido, usa distribuição vazia */ }
+    return { count, sum, dist };
+}
 
-    const { count, average } = getRatingStats();
+function saveLocalRating(value) {
+    const { count, sum, dist } = getLocalRatingData();
+    const newDist = { ...dist, [value]: (dist[value] || 0) + 1 };
+
+    localStorage.setItem(RATING_KEYS.count, String(count + 1));
+    localStorage.setItem(RATING_KEYS.sum, String(sum + value));
+    localStorage.setItem(RATING_KEYS.dist, JSON.stringify(newDist));
+
+    renderRatingData({ count: count + 1, sum: sum + value, dist: newDist });
+}
+
+// --- Renderização (comum aos dois modos) ---
+function renderRatingData({ count, sum, dist }) {
+    const scoreNumber = document.getElementById('rating-score-number');
+    const scoreStars = document.getElementById('rating-score-stars');
+    const scoreCount = document.getElementById('rating-score-count');
+    if (!scoreNumber || !scoreStars || !scoreCount) return;
+
+    const average = count > 0 ? sum / count : 0;
 
     if (count === 0) {
-        summaryStars.textContent = '☆☆☆☆☆';
-        summaryText.textContent = 'Seja o primeiro a avaliar!';
-        return;
+        scoreNumber.textContent = '–';
+        scoreStars.textContent = '☆☆☆☆☆';
+        scoreCount.textContent = 'Ainda sem avaliações';
+    } else {
+        const roundedAvg = Math.round(average);
+        scoreNumber.classList.remove('live-update');
+        void scoreNumber.offsetWidth;
+        scoreNumber.textContent = average.toFixed(1);
+        scoreNumber.classList.add('live-update');
+        scoreStars.textContent = '★★★★★'.slice(0, roundedAvg) + '☆☆☆☆☆'.slice(0, 5 - roundedAvg);
+        scoreCount.textContent = `${count} ${count === 1 ? 'avaliação' : 'avaliações'}`;
     }
 
-    const roundedAvg = Math.round(average);
-    summaryStars.textContent = '★★★★★'.slice(0, roundedAvg) + '☆☆☆☆☆'.slice(0, 5 - roundedAvg);
-    summaryText.textContent = `${average.toFixed(1)} de 5 · ${count} ${count === 1 ? 'avaliação' : 'avaliações'}`;
+    // Barras de distribuição (5★ no topo, 1★ embaixo)
+    for (let star = 1; star <= 5; star++) {
+        const row = document.querySelector(`.rating-bar-row[data-star="${star}"]`);
+        if (!row) continue;
+        const votes = (dist && dist[star]) || 0;
+        const pct = count > 0 ? Math.round((votes / count) * 100) : 0;
+        const fill = row.querySelector('.rating-bar-fill');
+        const pctLabel = row.querySelector('.rating-bar-pct');
+        if (fill) fill.style.width = `${pct}%`;
+        if (pctLabel) pctLabel.textContent = `${pct}%`;
+    }
 }
 
 function paintStars(upTo) {
@@ -609,30 +656,62 @@ function lockRatingWidget(myRating) {
 }
 
 function submitRating(value) {
-    const { count, sum, myRating } = getRatingStats();
-
     // Trava real: se esse navegador já votou, ignora novos cliques
-    if (myRating > 0) return;
+    if (getMyRating() > 0) return;
 
-    const newCount = count + 1;
-    const newSum = sum + value;
-
-    localStorage.setItem(RATING_KEYS.count, String(newCount));
-    localStorage.setItem(RATING_KEYS.sum, String(newSum));
     localStorage.setItem(RATING_KEYS.myRating, String(value));
-
     lockRatingWidget(value);
-    renderRatingSummary();
     showFeedback(`Obrigado pela avaliação de ${value} estrela${value > 1 ? 's' : ''}!`);
+
+    if (window.__ratingsDB) {
+        submitRatingFirebase(value);
+    } else {
+        saveLocalRating(value);
+    }
+}
+
+// --- Modo Firebase (tempo real entre todos os clientes) ---
+function submitRatingFirebase(value) {
+    const { ref, runTransaction, db } = window.__ratingsDB;
+    const ratingsRef = ref(db, 'ratings');
+
+    runTransaction(ratingsRef, (current) => {
+        const data = current || { count: 0, sum: 0, dist: { ...EMPTY_DIST } };
+        data.count = (data.count || 0) + 1;
+        data.sum = (data.sum || 0) + value;
+        data.dist = { ...EMPTY_DIST, ...data.dist };
+        data.dist[value] = (data.dist[value] || 0) + 1;
+        return data;
+    }).catch(err => {
+        console.error('Não foi possível salvar a avaliação no Firebase:', err);
+    });
+    // Não precisa re-renderizar aqui: o listener onValue (abaixo) já
+    // atualiza a tela sozinho assim que a transação é confirmada.
+}
+
+function initRatingFirebaseSync() {
+    const { ref, onValue, db } = window.__ratingsDB;
+    const ratingsRef = ref(db, 'ratings');
+
+    // Atualiza a tela em tempo real — pra QUALQUER pessoa no site,
+    // sempre que qualquer cliente (em qualquer aparelho) avaliar
+    onValue(ratingsRef, (snapshot) => {
+        const data = snapshot.val() || { count: 0, sum: 0, dist: { ...EMPTY_DIST } };
+        renderRatingData(data);
+    });
 }
 
 function initRatingWidget() {
     const starsWrap = document.getElementById('rating-stars');
     if (!starsWrap) return;
 
-    renderRatingSummary();
+    if (window.__ratingsDB) {
+        initRatingFirebaseSync();
+    } else {
+        renderRatingData(getLocalRatingData());
+    }
 
-    const { myRating } = getRatingStats();
+    const myRating = getMyRating();
     if (myRating > 0) {
         lockRatingWidget(myRating);
         return;
