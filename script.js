@@ -618,7 +618,9 @@ function renderRatingData({ count, sum, dist }) {
         scoreCount.textContent = `${count} ${count === 1 ? 'avaliação' : 'avaliações'}`;
     }
 
-    // Barras de distribuição (5★ no topo, 1★ embaixo)
+    // Barras de distribuição (5★ no topo, 1★ embaixo) — o requestAnimationFrame
+    // garante que o navegador registre o estado "0%" antes de animar até o
+    // valor real, mesmo na primeira renderização da página.
     for (let star = 1; star <= 5; star++) {
         const row = document.querySelector(`.rating-bar-row[data-star="${star}"]`);
         if (!row) continue;
@@ -626,8 +628,12 @@ function renderRatingData({ count, sum, dist }) {
         const pct = count > 0 ? Math.round((votes / count) * 100) : 0;
         const fill = row.querySelector('.rating-bar-fill');
         const pctLabel = row.querySelector('.rating-bar-pct');
-        if (fill) fill.style.width = `${pct}%`;
         if (pctLabel) pctLabel.textContent = `${pct}%`;
+        if (fill) {
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                fill.style.width = `${pct}%`;
+            }));
+        }
     }
 }
 
