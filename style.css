@@ -95,6 +95,18 @@ html {
     max-width: 100vw;
 }
 
+/* Cor de seleção de texto com a identidade da marca, em vez do
+   azul padrão do navegador (que destoa do tema Ember/Gold) */
+::selection {
+    background: rgba(240, 192, 96, 0.35);
+    color: var(--text-blaze);
+}
+
+::-moz-selection {
+    background: rgba(240, 192, 96, 0.35);
+    color: var(--text-blaze);
+}
+
 /* Rede de segurança: qualquer imagem/mídia sem width explícito não pode
    estourar a largura do elemento pai (causa clássica de scroll horizontal) */
 img, svg, video, iframe, embed, object {
