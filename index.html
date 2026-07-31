@@ -132,22 +132,66 @@
 
     <section class="rating-section" aria-label="Avalie sua experiência">
         <div class="rating-card">
-            <h3><i class="fa-solid fa-star text-fire" aria-hidden="true"></i> O que você achou?</h3>
-            <p class="rating-subtitle" id="rating-subtitle">Sua opinião ajuda a gente a ficar cada vez melhor.</p>
-
-            <div class="rating-stars" id="rating-stars" role="radiogroup" aria-label="Avaliar de 1 a 5 estrelas">
-                <button type="button" class="rating-star" data-value="1" role="radio" aria-checked="false" aria-label="1 estrela"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
-                <button type="button" class="rating-star" data-value="2" role="radio" aria-checked="false" aria-label="2 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
-                <button type="button" class="rating-star" data-value="3" role="radio" aria-checked="false" aria-label="3 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
-                <button type="button" class="rating-star" data-value="4" role="radio" aria-checked="false" aria-label="4 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
-                <button type="button" class="rating-star" data-value="5" role="radio" aria-checked="false" aria-label="5 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+            <div class="rating-heading">
+                <h3><i class="fa-solid fa-star text-fire" aria-hidden="true"></i> O que você achou?</h3>
+                <p class="rating-subtitle" id="rating-subtitle">Sua opinião ajuda a gente a ficar cada vez melhor.</p>
             </div>
 
-            <p class="rating-thanks" id="rating-thanks">Valeu por avaliar! Isso significa muito pra gente. 🙌</p>
+            <div class="rating-overview">
+                <div class="rating-score">
+                    <span class="rating-score-number" id="rating-score-number">–</span>
+                    <span class="rating-score-stars" id="rating-score-stars" aria-hidden="true">☆☆☆☆☆</span>
+                    <span class="rating-score-count" id="rating-score-count">Ainda sem avaliações</span>
+                </div>
 
-            <div class="rating-summary" id="rating-summary">
-                <span class="rating-summary-stars" id="rating-summary-stars" aria-hidden="true">☆☆☆☆☆</span>
-                <span class="rating-summary-text" id="rating-summary-text">Seja o primeiro a avaliar!</span>
+                <div class="rating-breakdown" id="rating-breakdown">
+                    <div class="rating-bar-row" data-star="5">
+                        <span class="rating-bar-label">5</span>
+                        <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+                        <span class="rating-bar-pct">0%</span>
+                    </div>
+                    <div class="rating-bar-row" data-star="4">
+                        <span class="rating-bar-label">4</span>
+                        <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+                        <span class="rating-bar-pct">0%</span>
+                    </div>
+                    <div class="rating-bar-row" data-star="3">
+                        <span class="rating-bar-label">3</span>
+                        <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+                        <span class="rating-bar-pct">0%</span>
+                    </div>
+                    <div class="rating-bar-row" data-star="2">
+                        <span class="rating-bar-label">2</span>
+                        <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+                        <span class="rating-bar-pct">0%</span>
+                    </div>
+                    <div class="rating-bar-row" data-star="1">
+                        <span class="rating-bar-label">1</span>
+                        <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
+                        <span class="rating-bar-pct">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rating-divider"></div>
+
+            <div class="rating-cta" id="rating-cta">
+                <p class="rating-cta-label">Toque nas estrelas pra avaliar:</p>
+                <div class="rating-stars" id="rating-stars" role="radiogroup" aria-label="Avaliar de 1 a 5 estrelas">
+                    <button type="button" class="rating-star" data-value="1" role="radio" aria-checked="false" aria-label="1 estrela"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="rating-star" data-value="2" role="radio" aria-checked="false" aria-label="2 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="rating-star" data-value="3" role="radio" aria-checked="false" aria-label="3 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="rating-star" data-value="4" role="radio" aria-checked="false" aria-label="4 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="rating-star" data-value="5" role="radio" aria-checked="false" aria-label="5 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+                </div>
+            </div>
+
+            <div class="rating-thanks" id="rating-thanks">
+                <span class="rating-thanks-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+                <div>
+                    <strong>Valeu por avaliar!</strong>
+                    <p>Isso significa muito pra gente. 🙌</p>
+                </div>
             </div>
         </div>
     </section>
@@ -205,6 +249,47 @@
         </div>
         <div class="promo-toast-progress" id="promo-toast-progress"></div>
     </div>
+
+    <!-- ============================================================
+         FIREBASE REALTIME DATABASE — sincroniza as avaliações em tempo
+         real entre TODOS os clientes (não só neste navegador).
+
+         COMO ATIVAR:
+         1. Crie um projeto gratuito em https://console.firebase.google.com
+         2. Ative "Realtime Database" (modo de teste) e publique as regras:
+            { "rules": { "ratings": { ".read": true, ".write": true } } }
+         3. Substitua os valores de firebaseConfig abaixo pelos do SEU
+            projeto (Configurações do projeto → seus apps → SDK).
+
+         Enquanto os valores abaixo forem os placeholders "COLE_AQUI_...",
+         o site funciona normalmente em modo local (por navegador), sem
+         quebrar nada — o script.js detecta automaticamente qual modo usar.
+    ============================================================ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAUB30RyX3bg9A73K2Jlj2a-cn0Sp9tIy8",
+            authDomain: "chicos-brasa.firebaseapp.com",
+            databaseURL: "https://chicos-brasa-default-rtdb.firebaseio.com",
+            projectId: "chicos-brasa",
+            storageBucket: "chicos-brasa.firebasestorage.app",
+            messagingSenderId: "964850588504",
+            appId: "1:964850588504:web:e9d762c18f8920aeab232d"
+        };
+
+        const isConfigured = !firebaseConfig.apiKey.startsWith("COLE_AQUI");
+
+        if (isConfigured) {
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+            // Disponibiliza pro script.js (script clássico, carregado depois)
+            window.__ratingsDB = { ref, onValue, runTransaction, db };
+        } else {
+            console.info("Firebase não configurado — avaliações funcionando em modo local (por navegador). Veja as instruções nos comentários deste arquivo.");
+        }
+    </script>
 
     <script src="script.js" defer></script>
 </body>
