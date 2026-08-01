@@ -1590,7 +1590,7 @@ a, button, input, select, textarea, [tabindex] {
     -webkit-backdrop-filter: blur(18px) saturate(1.3);
     border: 1px solid var(--border-dim);
     border-radius: var(--radius-lg);
-    padding: 40px 40px 36px;
+    padding: 44px 44px 40px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
 }
@@ -1608,20 +1608,53 @@ a, button, input, select, textarea, [tabindex] {
     opacity: 0.45;
 }
 
+/* Halo ambiente sutil atrás do cabeçalho, ecoando o resto do site */
+.rating-card::after {
+    content: '';
+    position: absolute;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    width: 360px; height: 240px;
+    background: radial-gradient(ellipse at center, rgba(255,90,20,0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
 .rating-heading {
+    position: relative;
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 34px;
+}
+
+.rating-eyebrow {
+    display: inline-block;
+    color: var(--gold-warm);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
 }
 
 .rating-card h3 {
-    font-size: 1.35rem;
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-blaze);
+    letter-spacing: 0.5px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+
+    background: linear-gradient(135deg, var(--text-blaze) 0%, var(--gold-pure) 65%, var(--gold-warm) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.rating-card h3 i {
+    -webkit-text-fill-color: initial;
+    color: var(--fire-core);
 }
 
 .rating-subtitle {
@@ -1633,9 +1666,9 @@ a, button, input, select, textarea, [tabindex] {
 .rating-overview {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 40px;
+    gap: 44px;
     align-items: center;
-    margin-bottom: 32px;
+    margin-bottom: 34px;
 }
 
 .rating-score {
@@ -1644,14 +1677,44 @@ a, button, input, select, textarea, [tabindex] {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding-right: 40px;
+    gap: 10px;
+    padding-right: 44px;
     border-right: 1px solid var(--border-dim);
-    min-width: 140px;
+    min-width: 160px;
+}
+
+/* Anel de progresso real: um conic-gradient dourado que preenche
+   conforme a média (0–100%), com um disco escuro por cima criando
+   o efeito de "anel" em vez de uma pizza cheia */
+.rating-score-ring {
+    --pct: 0;
+    position: relative;
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(var(--gold-pure) calc(var(--pct) * 1%), var(--bg-float) 0);
+    box-shadow: 0 0 0 1px var(--border-dim), 0 12px 30px rgba(240,192,96,0.12);
+    transition: background 0.8s var(--ease-spring);
+}
+
+.rating-score-ring-inner {
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: var(--bg-raised);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 0 var(--glass-highlight-soft);
 }
 
 .rating-score-number {
     font-family: 'Cinzel', serif;
-    font-size: 3.2rem;
+    font-size: 2.5rem;
     font-weight: 900;
     line-height: 1;
     background: linear-gradient(125deg, var(--gold-shine), var(--gold-pure) 45%, var(--gold-warm));
@@ -1662,62 +1725,88 @@ a, button, input, select, textarea, [tabindex] {
 }
 
 .rating-score-stars {
-    font-size: 1.15rem;
-    letter-spacing: 3px;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
     color: var(--gold-warm);
-    margin: 8px 0 6px;
+    margin-top: 4px;
+}
+
+.rating-score-qualifier {
+    color: var(--text-blaze);
+    font-size: 0.9rem;
+    font-weight: 700;
 }
 
 .rating-score-count {
     color: var(--text-muted);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
 .rating-breakdown {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .rating-bar-row {
     display: grid;
-    grid-template-columns: 14px 1fr 34px;
+    grid-template-columns: 30px 1fr 38px;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    transition: background var(--duration-fast) var(--ease-smooth);
+}
+
+.rating-bar-row:hover {
+    background: var(--glass-highlight-soft);
 }
 
 .rating-bar-label {
-    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    color: var(--text-secondary);
     font-size: 0.8rem;
-    font-weight: 600;
-    text-align: right;
+    font-weight: 700;
+}
+
+.rating-bar-label i {
+    font-size: 0.68rem;
+    color: var(--gold-warm);
 }
 
 .rating-bar-track {
-    height: 7px;
+    height: 8px;
     border-radius: var(--radius-pill);
     background: var(--bg-float);
     overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
 }
 
 .rating-bar-fill {
     height: 100%;
     border-radius: var(--radius-pill);
+    width: 0%;
     background: linear-gradient(to right, var(--gold-deep), var(--gold-pure));
-    transition: width 0.6s var(--ease-spring);
+    box-shadow: 0 0 8px rgba(240,192,96,0.35);
+    transition: width 0.7s var(--ease-spring);
 }
 
 .rating-bar-pct {
     color: var(--text-muted);
     font-size: 0.78rem;
+    font-weight: 600;
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .rating-divider {
     height: 1px;
     background: linear-gradient(to right, transparent, var(--border-subtle), transparent);
-    margin-bottom: 28px;
+    margin-bottom: 30px;
 }
 
 /* --- Chamada pra ação: estrelas clicáveis --- */
@@ -1727,17 +1816,17 @@ a, button, input, select, textarea, [tabindex] {
 
 .rating-cta-label {
     color: var(--text-secondary);
-    font-size: 0.88rem;
-    font-weight: 600;
-    margin-bottom: 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 16px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .rating-stars {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .rating-star {
@@ -1745,7 +1834,7 @@ a, button, input, select, textarea, [tabindex] {
     border: none;
     cursor: pointer;
     padding: 4px;
-    font-size: clamp(1.8rem, 6vw, 2.3rem);
+    font-size: clamp(1.9rem, 6vw, 2.4rem);
     line-height: 1;
     color: var(--bg-float);
     -webkit-text-stroke: 1px var(--border-glow);
@@ -1755,7 +1844,7 @@ a, button, input, select, textarea, [tabindex] {
 
 .rating-star:hover,
 .rating-star:focus-visible {
-    transform: scale(1.18) rotate(-4deg);
+    transform: scale(1.2) rotate(-4deg);
 }
 
 /* Preenchimento dourado até a estrela sob o mouse/teclado (preview) ou
@@ -1764,7 +1853,7 @@ a, button, input, select, textarea, [tabindex] {
 .rating-star.is-selected {
     color: var(--gold-pure);
     -webkit-text-stroke: 1px var(--gold-warm);
-    filter: drop-shadow(0 0 10px rgba(240,192,96,0.4));
+    filter: drop-shadow(0 0 10px rgba(240,192,96,0.45));
 }
 
 .rating-stars.is-locked .rating-star {
@@ -1779,11 +1868,22 @@ a, button, input, select, textarea, [tabindex] {
 .rating-thanks {
     display: none;
     align-items: center;
-    gap: 16px;
+    gap: 18px;
     background: var(--gold-halo);
     border: 1px solid var(--border-glow);
     border-radius: var(--radius-md);
-    padding: 18px 22px;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.rating-thanks::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-warm), transparent);
+    opacity: 0.5;
 }
 
 .rating-card.has-rated .rating-cta { display: none; }
@@ -1791,28 +1891,35 @@ a, button, input, select, textarea, [tabindex] {
 
 .rating-thanks-icon {
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #20b272, #128c7e);
     color: #fff;
-    font-size: 1.1rem;
-    box-shadow: 0 8px 20px rgba(32,178,114,0.35);
+    font-size: 1.15rem;
+    box-shadow: 0 8px 20px rgba(32,178,114,0.4);
 }
 
 .rating-thanks strong {
     color: var(--text-blaze);
-    font-size: 1rem;
+    font-size: 1.02rem;
     display: block;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
 .rating-thanks p {
     color: var(--text-muted);
     font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.rating-thanks-stars {
+    color: var(--gold-pure);
+    letter-spacing: 1px;
+    font-weight: 700;
 }
 
 /* Pulso curto quando a nota muda em tempo real (outro cliente avaliou) */
@@ -1829,22 +1936,28 @@ a, button, input, select, textarea, [tabindex] {
 @media (max-width: 700px) {
     .rating-overview {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 28px;
     }
     .rating-score {
         border-right: none;
         border-bottom: 1px solid var(--border-dim);
         padding-right: 0;
-        padding-bottom: 24px;
+        padding-bottom: 26px;
     }
 }
 
 @media (max-width: 480px) {
     .rating-section { padding: 0 16px; margin-top: 60px; }
-    .rating-card { padding: 30px 22px; }
-    .rating-stars { gap: 6px; }
-    .rating-score-number { font-size: 2.6rem; }
+    .rating-card { padding: 32px 22px; }
+    .rating-stars { gap: 8px; }
+    .rating-score-ring { width: 108px; height: 108px; }
+    .rating-score-number { font-size: 2.1rem; }
     .rating-thanks { flex-direction: column; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rating-score-ring { transition: none; }
+    .rating-bar-fill { transition: none; }
 }
 
 /* ============================================================
