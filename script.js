@@ -703,16 +703,17 @@ function lockRatingWidget(myRating) {
     }
 }
 
-// --- Envio da avaliação (+ comentário opcional) ---
+// --- Envio da avaliação (+ comentário/foto opcionais) ---
 async function submitRating(value, comment) {
     if (getMyRating() > 0) return; // trava: esse navegador já votou
     if (!value) return;
 
     const trimmedComment = (comment || '').trim();
+    const hasPhoto = !!selectedPhotoFile;
     const submitBtn = document.getElementById('rating-submit-btn');
 
-    // Se tem comentário, precisa estar logado com Google antes de publicar
-    if (trimmedComment && window.__ratingsDB) {
+    // Se tem comentário ou foto, precisa estar logado com Google antes de publicar
+    if ((trimmedComment || hasPhoto) && window.__ratingsDB) {
         if (submitBtn) submitBtn.disabled = true;
         try {
             await ensureSignedIn();
@@ -730,10 +731,14 @@ async function submitRating(value, comment) {
 
     if (window.__ratingsDB) {
         submitRatingFirebase(value);
-        if (trimmedComment) submitReviewFirebase(value, trimmedComment);
+        if (trimmedComment || hasPhoto) {
+            submitReviewFirebase(value, trimmedComment, selectedPhotoFile);
+        }
     } else {
         saveLocalRating(value);
     }
+
+    selectedPhotoFile = null;
 }
 
 // --- Modo Firebase: aggregate (/ratings) ---
@@ -807,27 +812,121 @@ function initAuth() {
     });
 }
 
-// --- Modo Firebase: publicar comentário ---
-function submitReviewFirebase(stars, comment) {
-    const { ref, push, serverTimestamp, db } = window.__ratingsDB;
+// --- Modo Firebase: publicar comentário (com upload de foto, se houver) ---
+async function submitReviewFirebase(stars, comment, photoBlob) {
+    const { ref, push, update, serverTimestamp, db, storage, storageRef, uploadBytes, getDownloadURL } = window.__ratingsDB;
     if (!currentReviewUser) return;
 
-    push(ref(db, 'reviews'), {
+    const reviewData = {
         uid: currentReviewUser.uid,
         name: currentReviewUser.displayName || 'Cliente',
-        photoURL: currentReviewUser.photoURL || null,
+        photoURL: currentReviewUser.photoURL || null, // foto do perfil Google
         stars,
         comment: comment.slice(0, COMMENT_MAX_LENGTH),
+        imageURL: null, // foto anexada ao comentário (diferente da foto do perfil)
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-    }).catch(err => {
+    };
+
+    try {
+        if (photoBlob) {
+            const path = `reviews/${currentReviewUser.uid}/${Date.now()}.jpg`;
+            const fileRef = storageRef(storage, path);
+            await uploadBytes(fileRef, photoBlob, { contentType: 'image/jpeg' });
+            reviewData.imageURL = await getDownloadURL(fileRef);
+        }
+        const newRef = push(ref(db, 'reviews'));
+        await update(newRef, reviewData);
+    } catch (err) {
         console.error('Não foi possível publicar o comentário:', err);
         showFeedback('Sua nota foi salva, mas o comentário não pôde ser publicado.');
+    }
+}
+
+// --- Anexar foto ao comentário (redimensiona no navegador antes de enviar,
+// economiza espaço no Storage e tempo de upload) ---
+let selectedPhotoFile = null;
+
+function resizeImageFile(file, maxDimension = 1280, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            let { width, height } = img;
+
+            if (width > height && width > maxDimension) {
+                height = Math.round(height * (maxDimension / width));
+                width = maxDimension;
+            } else if (height >= width && height > maxDimension) {
+                width = Math.round(width * (maxDimension / height));
+                height = maxDimension;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            canvas.toBlob(
+                blob => blob ? resolve(blob) : reject(new Error('Falha ao processar imagem')),
+                'image/jpeg',
+                quality
+            );
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Não foi possível carregar a imagem'));
+        };
+        img.src = objectUrl;
+    });
+}
+
+function initPhotoInput() {
+    const input = document.getElementById('rating-photo-input');
+    const label = document.getElementById('rating-photo-label');
+    const preview = document.getElementById('rating-photo-preview');
+    const previewImg = document.getElementById('rating-photo-preview-img');
+    const removeBtn = document.getElementById('rating-photo-remove');
+    if (!input) return;
+
+    input.addEventListener('change', async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showFeedback('Escolha um arquivo de imagem.');
+            input.value = '';
+            return;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+            showFeedback('Imagem muito grande (máximo 8MB).');
+            input.value = '';
+            return;
+        }
+
+        try {
+            selectedPhotoFile = await resizeImageFile(file);
+            previewImg.src = URL.createObjectURL(selectedPhotoFile);
+            preview.hidden = false;
+            label.hidden = true;
+        } catch (err) {
+            console.error('Não foi possível processar a imagem:', err);
+            showFeedback('Não foi possível processar essa imagem.');
+        }
+    });
+
+    removeBtn?.addEventListener('click', () => {
+        selectedPhotoFile = null;
+        input.value = '';
+        preview.hidden = true;
+        label.hidden = false;
     });
 }
 
 // --- Mural de comentários ---
 let lastReviewsSnapshot = {};
+let visibleReviewsCount = 5; // "Ver mais" revela +5 por vez, evita lotar a página
 
 function initReviewsWall() {
     const wall = document.getElementById('reviews-wall');
@@ -841,11 +940,17 @@ function initReviewsWall() {
         lastReviewsSnapshot = snapshot.val() || {};
         renderReviewsWall(lastReviewsSnapshot);
     });
+
+    document.getElementById('reviews-load-more')?.addEventListener('click', () => {
+        visibleReviewsCount += 5;
+        renderReviewsWall(lastReviewsSnapshot);
+    });
 }
 
 function renderReviewsWall(data) {
     const list = document.getElementById('reviews-list');
     const empty = document.getElementById('reviews-empty');
+    const loadMoreBtn = document.getElementById('reviews-load-more');
     if (!list) return;
 
     const entries = Object.entries(data || {}).reverse(); // mais recentes primeiro
@@ -854,10 +959,13 @@ function renderReviewsWall(data) {
         list.innerHTML = '';
         if (empty) list.appendChild(empty);
         else list.innerHTML = '<p class="reviews-empty">Nenhum comentário ainda. Seja o primeiro!</p>';
+        if (loadMoreBtn) loadMoreBtn.hidden = true;
         return;
     }
 
-    list.innerHTML = entries.map(([id, review]) => renderReviewCard(id, review)).join('');
+    // Só renderiza os N primeiros — evita lotar a página de comentários
+    const visibleEntries = entries.slice(0, visibleReviewsCount);
+    list.innerHTML = visibleEntries.map(([id, review]) => renderReviewCard(id, review)).join('');
 
     // Reata os eventos dos botões (innerHTML recria os elementos)
     list.querySelectorAll('[data-edit-id]').forEach(btn => {
@@ -866,6 +974,14 @@ function renderReviewsWall(data) {
     list.querySelectorAll('[data-delete-id]').forEach(btn => {
         btn.addEventListener('click', () => deleteReview(btn.dataset.deleteId, Number(btn.dataset.stars)));
     });
+
+    if (loadMoreBtn) {
+        const remaining = entries.length - visibleEntries.length;
+        loadMoreBtn.hidden = remaining <= 0;
+        if (remaining > 0) {
+            loadMoreBtn.innerHTML = `Ver mais comentários (${remaining}) <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>`;
+        }
+    }
 }
 
 function renderReviewCard(id, review) {
@@ -880,6 +996,12 @@ function renderReviewCard(id, review) {
     const avatar = review.photoURL
         ? `<img class="review-avatar" src="${escapeHtml(review.photoURL)}" alt="">`
         : `<span class="review-avatar-fallback">${name.charAt(0).toUpperCase()}</span>`;
+
+    const photoHtml = review.imageURL
+        ? `<a href="${escapeHtml(review.imageURL)}" target="_blank" rel="noopener noreferrer">
+               <img class="review-photo" src="${escapeHtml(review.imageURL)}" alt="Foto enviada por ${name}" loading="lazy">
+           </a>`
+        : '';
 
     const actions = isOwner ? `
         <div class="review-actions">
@@ -901,6 +1023,7 @@ function renderReviewCard(id, review) {
                     <span class="review-date">${dateStr}</span>
                 </div>
                 <div class="review-stars" aria-hidden="true">${starsStr}</div>
+                ${photoHtml}
                 <p class="review-text${wasEdited ? ' is-edited' : ''}">${comment}</p>
                 ${actions}
             </div>
@@ -1026,6 +1149,8 @@ function initRatingWidget() {
             commentCount.textContent = `${commentInput.value.length}/${COMMENT_MAX_LENGTH}`;
         });
     }
+
+    initPhotoInput();
 
     if (submitBtn) {
         submitBtn.addEventListener('click', () => {
