@@ -925,8 +925,41 @@ function initPhotoInput() {
 }
 
 // --- Mural de comentários ---
+const INITIAL_VISIBLE_REVIEWS = 5;
+const LIKED_REVIEWS_KEY = 'chicosbrasa_liked_reviews';
+
 let lastReviewsSnapshot = {};
-let visibleReviewsCount = 5; // "Ver mais" revela +5 por vez, evita lotar a página
+let visibleReviewsCount = INITIAL_VISIBLE_REVIEWS; // "Ver mais" revela +5 por vez
+let reviewsSortMode = 'top'; // 'top' (Principais, por curtidas) ou 'recent' (Mais recentes)
+
+function getLikedReviewIds() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(LIKED_REVIEWS_KEY) || '[]'));
+    } catch {
+        return new Set();
+    }
+}
+
+function saveLikedReviewIds(set) {
+    localStorage.setItem(LIKED_REVIEWS_KEY, JSON.stringify([...set]));
+}
+
+// Curtir é livre (sem login), igual a avaliar com estrelas — só trava
+// pelo navegador pra não deixar a mesma pessoa curtir 100x o mesmo comentário
+function toggleLike(id) {
+    if (!window.__ratingsDB) return;
+    const { ref, runTransaction, db } = window.__ratingsDB;
+    const liked = getLikedReviewIds();
+    const alreadyLiked = liked.has(id);
+
+    runTransaction(ref(db, `reviews/${id}/likes`), (current) => {
+        const count = current || 0;
+        return alreadyLiked ? Math.max(0, count - 1) : count + 1;
+    }).catch(err => console.error('Não foi possível curtir o comentário:', err));
+
+    if (alreadyLiked) liked.delete(id); else liked.add(id);
+    saveLikedReviewIds(liked);
+}
 
 function initReviewsWall() {
     const wall = document.getElementById('reviews-wall');
@@ -934,7 +967,7 @@ function initReviewsWall() {
     wall.hidden = false;
 
     const { ref, onValue, query, limitToLast, db } = window.__ratingsDB;
-    const reviewsQuery = query(ref(db, 'reviews'), limitToLast(30));
+    const reviewsQuery = query(ref(db, 'reviews'), limitToLast(50));
 
     onValue(reviewsQuery, (snapshot) => {
         lastReviewsSnapshot = snapshot.val() || {};
@@ -945,23 +978,53 @@ function initReviewsWall() {
         visibleReviewsCount += 5;
         renderReviewsWall(lastReviewsSnapshot);
     });
+
+    document.getElementById('reviews-load-less')?.addEventListener('click', () => {
+        visibleReviewsCount = INITIAL_VISIBLE_REVIEWS;
+        renderReviewsWall(lastReviewsSnapshot);
+        document.getElementById('reviews-wall')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    document.querySelectorAll('.reviews-sort-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            reviewsSortMode = tab.dataset.sort;
+            visibleReviewsCount = INITIAL_VISIBLE_REVIEWS; // recomeça a paginação ao trocar ordenação
+            document.querySelectorAll('.reviews-sort-tab').forEach(t => {
+                t.classList.toggle('active', t === tab);
+                t.setAttribute('aria-selected', String(t === tab));
+            });
+            renderReviewsWall(lastReviewsSnapshot);
+        });
+    });
 }
 
 function renderReviewsWall(data) {
     const list = document.getElementById('reviews-list');
     const empty = document.getElementById('reviews-empty');
     const loadMoreBtn = document.getElementById('reviews-load-more');
+    const loadLessBtn = document.getElementById('reviews-load-less');
     if (!list) return;
 
-    const entries = Object.entries(data || {}).reverse(); // mais recentes primeiro
+    let entries = Object.entries(data || {});
 
     if (entries.length === 0) {
         list.innerHTML = '';
         if (empty) list.appendChild(empty);
         else list.innerHTML = '<p class="reviews-empty">Nenhum comentário ainda. Seja o primeiro!</p>';
         if (loadMoreBtn) loadMoreBtn.hidden = true;
+        if (loadLessBtn) loadLessBtn.hidden = true;
         return;
     }
+
+    // "Principais" = mais curtidos primeiro (desempate: mais recente).
+    // "Mais recentes" = ordem cronológica, do mais novo pro mais antigo.
+    entries = entries.sort(([, a], [, b]) => {
+        if (reviewsSortMode === 'top') {
+            const likeDiff = (b.likes || 0) - (a.likes || 0);
+            if (likeDiff !== 0) return likeDiff;
+        }
+        return (b.createdAt || 0) - (a.createdAt || 0);
+    });
 
     // Só renderiza os N primeiros — evita lotar a página de comentários
     const visibleEntries = entries.slice(0, visibleReviewsCount);
@@ -974,13 +1037,19 @@ function renderReviewsWall(data) {
     list.querySelectorAll('[data-delete-id]').forEach(btn => {
         btn.addEventListener('click', () => deleteReview(btn.dataset.deleteId, Number(btn.dataset.stars)));
     });
+    list.querySelectorAll('[data-like-id]').forEach(btn => {
+        btn.addEventListener('click', () => toggleLike(btn.dataset.likeId));
+    });
 
+    const remaining = entries.length - visibleEntries.length;
     if (loadMoreBtn) {
-        const remaining = entries.length - visibleEntries.length;
         loadMoreBtn.hidden = remaining <= 0;
         if (remaining > 0) {
             loadMoreBtn.innerHTML = `Ver mais comentários (${remaining}) <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>`;
         }
+    }
+    if (loadLessBtn) {
+        loadLessBtn.hidden = visibleReviewsCount <= INITIAL_VISIBLE_REVIEWS;
     }
 }
 
@@ -989,6 +1058,8 @@ function renderReviewCard(id, review) {
     const name = escapeHtml(review.name || 'Cliente');
     const comment = escapeHtml(review.comment || '');
     const stars = Number(review.stars) || 0;
+    const likes = Number(review.likes) || 0;
+    const isLiked = getLikedReviewIds().has(id);
     const starsStr = '★★★★★'.slice(0, stars) + '☆☆☆☆☆'.slice(0, 5 - stars);
     const dateStr = formatReviewDate(review.updatedAt || review.createdAt);
     const wasEdited = review.updatedAt && review.createdAt && review.updatedAt !== review.createdAt;
@@ -1003,15 +1074,13 @@ function renderReviewCard(id, review) {
            </a>`
         : '';
 
-    const actions = isOwner ? `
-        <div class="review-actions">
-            <button type="button" class="review-action-btn" data-edit-id="${id}">
-                <i class="fa-solid fa-pen" aria-hidden="true"></i> Editar
-            </button>
-            <button type="button" class="review-action-btn is-danger" data-delete-id="${id}" data-stars="${stars}">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir
-            </button>
-        </div>
+    const ownerActions = isOwner ? `
+        <button type="button" class="review-action-btn" data-edit-id="${id}">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i> Editar
+        </button>
+        <button type="button" class="review-action-btn is-danger" data-delete-id="${id}" data-stars="${stars}">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir
+        </button>
     ` : '';
 
     return `
@@ -1025,7 +1094,13 @@ function renderReviewCard(id, review) {
                 <div class="review-stars" aria-hidden="true">${starsStr}</div>
                 ${photoHtml}
                 <p class="review-text${wasEdited ? ' is-edited' : ''}">${comment}</p>
-                ${actions}
+                <div class="review-actions">
+                    <button type="button" class="review-action-btn review-like-btn${isLiked ? ' is-liked' : ''}" data-like-id="${id}" aria-pressed="${isLiked}">
+                        <i class="fa-${isLiked ? 'solid' : 'regular'} fa-thumbs-up" aria-hidden="true"></i>
+                        <span>${likes > 0 ? likes : 'Curtir'}</span>
+                    </button>
+                    ${ownerActions}
+                </div>
             </div>
         </div>
     `;
