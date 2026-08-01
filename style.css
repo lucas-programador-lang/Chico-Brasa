@@ -2367,14 +2367,59 @@ a, button, input, select, textarea, [tabindex] {
 
 .review-photo:hover { transform: scale(1.02); }
 
-/* --- Ver mais comentários (evita lotar a página) --- */
-.reviews-load-more {
+/* --- Abas de ordenação: Principais / Mais recentes (igual YouTube) --- */
+.reviews-sort-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-dim);
+}
+
+.reviews-sort-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 4px 10px;
+    margin-right: 18px;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-smooth),
+                border-color var(--duration-fast) var(--ease-smooth);
+}
+
+.reviews-sort-tab:hover { color: var(--text-secondary); }
+
+.reviews-sort-tab.active {
+    color: var(--gold-pure);
+    border-bottom-color: var(--gold-pure);
+}
+
+/* --- Curtir comentário --- */
+.review-like-btn.is-liked {
+    color: var(--gold-warm);
+}
+
+.review-like-btn.is-liked i {
+    font-weight: 900; /* troca pro ícone sólido via classe no JS, isso é reforço visual */
+}
+
+/* --- Ver mais / Ver menos comentários (evita lotar a página) --- */
+.reviews-load-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.reviews-load-more,
+.reviews-load-less {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    width: 100%;
-    margin-top: 14px;
+    flex: 1;
     padding: 12px;
     background: var(--glass-bg);
     border: 1px solid var(--border-dim);
@@ -2388,10 +2433,24 @@ a, button, input, select, textarea, [tabindex] {
                 color var(--duration-fast) var(--ease-smooth);
 }
 
+.reviews-load-less {
+    flex: 0 0 auto;
+    padding: 12px 20px;
+    background: transparent;
+}
+
 .reviews-load-more:hover,
-.reviews-load-more:focus-visible {
+.reviews-load-more:focus-visible,
+.reviews-load-less:hover,
+.reviews-load-less:focus-visible {
     border-color: var(--border-glow);
     color: var(--gold-warm);
+}
+
+@media (max-width: 480px) {
+    .reviews-load-actions { flex-direction: column; }
+    .reviews-sort-tabs { gap: 0; }
+    .reviews-sort-tab { margin-right: 14px; font-size: 0.8rem; }
 }
 
 /* ============================================================
