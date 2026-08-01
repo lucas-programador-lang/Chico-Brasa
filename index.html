@@ -182,13 +182,28 @@
             <div class="rating-divider"></div>
 
             <div class="rating-cta" id="rating-cta">
-                <p class="rating-cta-label">Toque nas estrelas pra avaliar:</p>
+                <p class="rating-cta-label" id="rating-cta-label">Toque nas estrelas pra avaliar:</p>
                 <div class="rating-stars" id="rating-stars" role="radiogroup" aria-label="Avaliar de 1 a 5 estrelas">
                     <button type="button" class="rating-star" data-value="1" role="radio" aria-checked="false" aria-label="1 estrela"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
                     <button type="button" class="rating-star" data-value="2" role="radio" aria-checked="false" aria-label="2 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
                     <button type="button" class="rating-star" data-value="3" role="radio" aria-checked="false" aria-label="3 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
                     <button type="button" class="rating-star" data-value="4" role="radio" aria-checked="false" aria-label="4 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
                     <button type="button" class="rating-star" data-value="5" role="radio" aria-checked="false" aria-label="5 estrelas"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+                </div>
+
+                <div class="rating-comment-box" id="rating-comment-box">
+                    <textarea
+                        id="rating-comment-input"
+                        class="rating-textarea"
+                        placeholder="Quer contar como foi sua experiência? (opcional — entra com Google pra publicar)"
+                        maxlength="280"
+                        rows="3"></textarea>
+                    <div class="rating-comment-footer">
+                        <span class="rating-comment-count" id="rating-comment-count">0/280</span>
+                        <button type="button" class="rating-submit-btn" id="rating-submit-btn" disabled>
+                            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Enviar avaliação
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -198,6 +213,23 @@
                     <strong>Valeu por avaliar!</strong>
                     <p>Você deu <span class="rating-thanks-stars" id="rating-thanks-stars">★★★★★</span> — isso significa muito pra gente. 🙌</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Mural de comentários — só existe quando o Firebase está ativo,
+             já que exige login (identidade real) pra permitir editar/excluir
+             com segurança. Fica escondido em modo local. -->
+        <div class="reviews-wall" id="reviews-wall" hidden>
+            <div class="reviews-wall-header">
+                <h4><i class="fa-solid fa-comments text-fire" aria-hidden="true"></i> Comentários de clientes</h4>
+                <div class="reviews-auth" id="reviews-auth">
+                    <button type="button" class="reviews-google-btn" id="reviews-google-btn">
+                        <i class="fa-brands fa-google" aria-hidden="true"></i> Entrar com Google pra comentar
+                    </button>
+                </div>
+            </div>
+            <div class="reviews-list" id="reviews-list">
+                <p class="reviews-empty" id="reviews-empty">Nenhum comentário ainda. Seja o primeiro!</p>
             </div>
         </div>
     </section>
@@ -257,23 +289,29 @@
     </div>
 
     <!-- ============================================================
-         FIREBASE REALTIME DATABASE — sincroniza as avaliações em tempo
-         real entre TODOS os clientes (não só neste navegador).
+         FIREBASE — Realtime Database (avaliações + comentários em tempo
+         real) e Authentication (login com Google, exigido só pra quem
+         quer deixar um comentário — avaliar com estrelas continua livre).
 
-         COMO ATIVAR:
-         1. Crie um projeto gratuito em https://console.firebase.google.com
-         2. Ative "Realtime Database" (modo de teste) e publique as regras:
-            { "rules": { "ratings": { ".read": true, ".write": true } } }
-         3. Substitua os valores de firebaseConfig abaixo pelos do SEU
-            projeto (Configurações do projeto → seus apps → SDK).
+         COMO ATIVAR (se ainda não fez):
+         1. https://console.firebase.google.com → seu projeto
+         2. Authentication → Sign-in method → Google → Ativar
+         3. Authentication → Settings → Domínios autorizados → adicione
+            o domínio real do seu site
+         4. Realtime Database → Regras → publique as regras do chat
 
-         Enquanto os valores abaixo forem os placeholders "COLE_AQUI_...",
-         o site funciona normalmente em modo local (por navegador), sem
-         quebrar nada — o script.js detecta automaticamente qual modo usar.
+         Enquanto firebaseConfig.apiKey começar com "COLE_AQUI", o site
+         funciona em modo local (por navegador), sem quebrar nada.
     ============================================================ -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+        import {
+            getDatabase, ref, onValue, runTransaction, push, update, remove,
+            query, limitToLast, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+        import {
+            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAUB30RyX3bg9A73K2Jlj2a-cn0Sp9tIy8",
@@ -290,8 +328,12 @@
         if (isConfigured) {
             const app = initializeApp(firebaseConfig);
             const db = getDatabase(app);
+            const auth = getAuth(app);
             // Disponibiliza pro script.js (script clássico, carregado depois)
-            window.__ratingsDB = { ref, onValue, runTransaction, db };
+            window.__ratingsDB = {
+                ref, onValue, runTransaction, push, update, remove, query, limitToLast, serverTimestamp, db,
+                auth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+            };
         } else {
             console.info("Firebase não configurado — avaliações funcionando em modo local (por navegador). Veja as instruções nos comentários deste arquivo.");
         }
