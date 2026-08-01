@@ -133,40 +133,46 @@
     <section class="rating-section" aria-label="Avalie sua experiência">
         <div class="rating-card">
             <div class="rating-heading">
+                <span class="rating-eyebrow">Avaliação dos clientes</span>
                 <h3><i class="fa-solid fa-star text-fire" aria-hidden="true"></i> O que você achou?</h3>
                 <p class="rating-subtitle" id="rating-subtitle">Sua opinião ajuda a gente a ficar cada vez melhor.</p>
             </div>
 
             <div class="rating-overview">
                 <div class="rating-score">
-                    <span class="rating-score-number" id="rating-score-number">–</span>
-                    <span class="rating-score-stars" id="rating-score-stars" aria-hidden="true">☆☆☆☆☆</span>
+                    <div class="rating-score-ring" id="rating-score-ring" style="--pct: 0">
+                        <div class="rating-score-ring-inner">
+                            <span class="rating-score-number" id="rating-score-number">–</span>
+                            <span class="rating-score-stars" id="rating-score-stars" aria-hidden="true">☆☆☆☆☆</span>
+                        </div>
+                    </div>
+                    <span class="rating-score-qualifier" id="rating-score-qualifier"></span>
                     <span class="rating-score-count" id="rating-score-count">Ainda sem avaliações</span>
                 </div>
 
                 <div class="rating-breakdown" id="rating-breakdown">
                     <div class="rating-bar-row" data-star="5">
-                        <span class="rating-bar-label">5</span>
+                        <span class="rating-bar-label">5 <i class="fa-solid fa-star" aria-hidden="true"></i></span>
                         <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
                         <span class="rating-bar-pct">0%</span>
                     </div>
                     <div class="rating-bar-row" data-star="4">
-                        <span class="rating-bar-label">4</span>
+                        <span class="rating-bar-label">4 <i class="fa-solid fa-star" aria-hidden="true"></i></span>
                         <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
                         <span class="rating-bar-pct">0%</span>
                     </div>
                     <div class="rating-bar-row" data-star="3">
-                        <span class="rating-bar-label">3</span>
+                        <span class="rating-bar-label">3 <i class="fa-solid fa-star" aria-hidden="true"></i></span>
                         <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
                         <span class="rating-bar-pct">0%</span>
                     </div>
                     <div class="rating-bar-row" data-star="2">
-                        <span class="rating-bar-label">2</span>
+                        <span class="rating-bar-label">2 <i class="fa-solid fa-star" aria-hidden="true"></i></span>
                         <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
                         <span class="rating-bar-pct">0%</span>
                     </div>
                     <div class="rating-bar-row" data-star="1">
-                        <span class="rating-bar-label">1</span>
+                        <span class="rating-bar-label">1 <i class="fa-solid fa-star" aria-hidden="true"></i></span>
                         <div class="rating-bar-track"><div class="rating-bar-fill" style="width:0%"></div></div>
                         <span class="rating-bar-pct">0%</span>
                     </div>
@@ -190,7 +196,7 @@
                 <span class="rating-thanks-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
                 <div>
                     <strong>Valeu por avaliar!</strong>
-                    <p>Isso significa muito pra gente. 🙌</p>
+                    <p>Você deu <span class="rating-thanks-stars" id="rating-thanks-stars">★★★★★</span> — isso significa muito pra gente. 🙌</p>
                 </div>
             </div>
         </div>
