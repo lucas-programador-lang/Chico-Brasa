@@ -290,8 +290,9 @@
 
     <!-- ============================================================
          FIREBASE — Realtime Database (avaliações + comentários em tempo
-         real) e Authentication (login com Google, exigido só pra quem
-         quer deixar um comentário — avaliar com estrelas continua livre).
+         real), Authentication (login com Google, exigido só pra quem
+         quer deixar um comentário) e App Check (bloqueia bots e chamadas
+         fora do site, de forma invisível — sem checkbox pro cliente).
 
          COMO ATIVAR (se ainda não fez):
          1. https://console.firebase.google.com → seu projeto
@@ -299,12 +300,16 @@
          3. Authentication → Settings → Domínios autorizados → adicione
             o domínio real do seu site
          4. Realtime Database → Regras → publique as regras do chat
+         5. Crie uma chave reCAPTCHA v3 em google.com/recaptcha/admin/create
+         6. App Check → Introdução → seu app Web → reCAPTCHA v3 → cole a
+            chave do site (Site Key) → substitua RECAPTCHA_SITE_KEY abaixo
 
          Enquanto firebaseConfig.apiKey começar com "COLE_AQUI", o site
          funciona em modo local (por navegador), sem quebrar nada.
     ============================================================ -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check.js";
         import {
             getDatabase, ref, onValue, runTransaction, push, update, remove,
             query, limitToLast, serverTimestamp
@@ -323,10 +328,24 @@
             appId: "1:964850588504:web:e9d762c18f8920aeab232d"
         };
 
+        // Cole aqui a "Site Key" que você criar em google.com/recaptcha/admin
+        const RECAPTCHA_SITE_KEY = "6Ld4rHAtAAAAAG2ZMS3uJ3C-RE7eE9hjrmvkYcW2";
+
         const isConfigured = !firebaseConfig.apiKey.startsWith("COLE_AQUI");
+        const isAppCheckConfigured = !RECAPTCHA_SITE_KEY.startsWith("COLE_AQUI");
 
         if (isConfigured) {
             const app = initializeApp(firebaseConfig);
+
+            if (isAppCheckConfigured) {
+                initializeAppCheck(app, {
+                    provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+                    isTokenAutoRefreshEnabled: true
+                });
+            } else {
+                console.info("App Check não configurado ainda — votos/comentários funcionam normalmente, só sem a proteção extra contra bots.");
+            }
+
             const db = getDatabase(app);
             const auth = getAuth(app);
             // Disponibiliza pro script.js (script clássico, carregado depois)
