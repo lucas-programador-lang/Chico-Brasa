@@ -543,22 +543,17 @@ function initPromoToast() {
 }
 
 // ============================================================
-// AVALIAÇÃO POR ESTRELAS
+// AVALIAÇÃO POR ESTRELAS + COMENTÁRIOS
 // ------------------------------------------------------------
-// Tem DOIS modos, escolhidos automaticamente:
+// Avaliar com estrelas continua livre, sem login (como já era).
+// Deixar um COMENTÁRIO exige entrar com Google — é o que permite
+// mostrar nome/foto reais e, principalmente, garantir com segurança
+// (via regras do Firebase) que só o dono consegue editar/excluir o
+// próprio comentário depois.
 //
-// 1) MODO FIREBASE (tempo real, entre TODOS os clientes) — ativo
-//    quando o bloco <script type="module"> no index.html tiver as
-//    chaves do seu projeto Firebase preenchidas. Nesse modo, as
-//    avaliações somam pra todo mundo e a tela atualiza sozinha
-//    assim que qualquer cliente avalia, em qualquer aparelho.
-//
-// 2) MODO LOCAL (fallback) — usado enquanto o Firebase não estiver
-//    configurado. A contagem fica só no localStorage do navegador
-//    de cada pessoa (não soma entre aparelhos diferentes).
-//
-// Em ambos os modos, o navegador guarda "chicosbrasa_my_rating"
-// pra impedir que a MESMA pessoa vote de novo pelo mesmo aparelho.
+// Sem Firebase configurado, o site cai automaticamente pro modo
+// local: estrelas funcionam (só neste navegador), comentários e o
+// mural ficam desativados (exigem Firebase + Auth).
 // ============================================================
 const RATING_KEYS = {
     count: 'chicosbrasa_rating_count',
@@ -568,9 +563,29 @@ const RATING_KEYS = {
 };
 
 const EMPTY_DIST = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+const COMMENT_MAX_LENGTH = 280;
+
+let draftRatingValue = 0;
+let currentReviewUser = null; // preenchido pelo onAuthStateChanged
 
 function getMyRating() {
     return Number(localStorage.getItem(RATING_KEYS.myRating)) || 0;
+}
+
+// Evita HTML/scripts injetados via nome do Google ou texto do comentário
+// (ambos são conteúdo de usuário e vão parar em innerHTML no mural)
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+}
+
+function formatReviewDate(timestamp) {
+    if (!timestamp) return 'agora mesmo';
+    const d = new Date(timestamp);
+    const datePart = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `${datePart} às ${timePart}`;
 }
 
 // --- Modo local (localStorage) ---
@@ -595,8 +610,7 @@ function saveLocalRating(value) {
     renderRatingData({ count: count + 1, sum: sum + value, dist: newDist });
 }
 
-// --- Renderização (comum aos dois modos) ---
-// Texto qualitativo com base na média (referência comum em widgets de review)
+// --- Renderização da nota (comum aos dois modos) ---
 function getQualifierLabel(average) {
     if (average >= 4.5) return 'Excelente!';
     if (average >= 3.5) return 'Muito bom';
@@ -630,13 +644,9 @@ function renderRatingData({ count, sum, dist }) {
         scoreStars.textContent = '★★★★★'.slice(0, roundedAvg) + '☆☆☆☆☆'.slice(0, 5 - roundedAvg);
         if (scoreQualifier) scoreQualifier.textContent = getQualifierLabel(average);
         scoreCount.textContent = `${count} ${count === 1 ? 'avaliação' : 'avaliações'}`;
-        // Preenche o anel de progresso proporcional à média (0–5 → 0–100%)
         if (scoreRing) scoreRing.style.setProperty('--pct', ((average / 5) * 100).toFixed(1));
     }
 
-    // Barras de distribuição (5★ no topo, 1★ embaixo) — o requestAnimationFrame
-    // garante que o navegador registre o estado "0%" antes de animar até o
-    // valor real, mesmo na primeira renderização da página.
     for (let star = 1; star <= 5; star++) {
         const row = document.querySelector(`.rating-bar-row[data-star="${star}"]`);
         if (!row) continue;
@@ -653,11 +663,24 @@ function renderRatingData({ count, sum, dist }) {
     }
 }
 
+// --- Seleção das estrelas (rascunho, antes de enviar) ---
 function paintStars(upTo) {
     document.querySelectorAll('.rating-star').forEach(star => {
         const value = Number(star.dataset.value);
-        star.classList.toggle('is-hover', value <= upTo);
+        star.classList.toggle('is-selected', value <= upTo);
     });
+}
+
+function selectDraftStars(value) {
+    draftRatingValue = value;
+    paintStars(value);
+    document.querySelectorAll('.rating-star').forEach(star => {
+        star.setAttribute('aria-checked', String(Number(star.dataset.value) === value));
+    });
+    const submitBtn = document.getElementById('rating-submit-btn');
+    if (submitBtn) submitBtn.disabled = value === 0;
+    const label = document.getElementById('rating-cta-label');
+    if (label) label.textContent = value > 0 ? `Sua nota: ${value} de 5` : 'Toque nas estrelas pra avaliar:';
 }
 
 function lockRatingWidget(myRating) {
@@ -668,12 +691,10 @@ function lockRatingWidget(myRating) {
 
     card.classList.add('has-rated');
     starsWrap.classList.add('is-locked');
+    paintStars(myRating);
 
     document.querySelectorAll('.rating-star').forEach(star => {
-        const value = Number(star.dataset.value);
-        const filled = value <= myRating;
-        star.classList.toggle('is-selected', filled);
-        star.setAttribute('aria-checked', String(filled));
+        star.setAttribute('aria-checked', String(Number(star.dataset.value) === myRating));
         star.tabIndex = -1;
     });
 
@@ -682,9 +703,26 @@ function lockRatingWidget(myRating) {
     }
 }
 
-function submitRating(value) {
-    // Trava real: se esse navegador já votou, ignora novos cliques
-    if (getMyRating() > 0) return;
+// --- Envio da avaliação (+ comentário opcional) ---
+async function submitRating(value, comment) {
+    if (getMyRating() > 0) return; // trava: esse navegador já votou
+    if (!value) return;
+
+    const trimmedComment = (comment || '').trim();
+    const submitBtn = document.getElementById('rating-submit-btn');
+
+    // Se tem comentário, precisa estar logado com Google antes de publicar
+    if (trimmedComment && window.__ratingsDB) {
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+            await ensureSignedIn();
+        } catch (err) {
+            console.error('Login com Google necessário pra comentar:', err);
+            showFeedback('Entra com Google pra publicar seu comentário 🙂');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+    }
 
     localStorage.setItem(RATING_KEYS.myRating, String(value));
     lockRatingWidget(value);
@@ -692,12 +730,13 @@ function submitRating(value) {
 
     if (window.__ratingsDB) {
         submitRatingFirebase(value);
+        if (trimmedComment) submitReviewFirebase(value, trimmedComment);
     } else {
         saveLocalRating(value);
     }
 }
 
-// --- Modo Firebase (tempo real entre todos os clientes) ---
+// --- Modo Firebase: aggregate (/ratings) ---
 function submitRatingFirebase(value) {
     const { ref, runTransaction, db } = window.__ratingsDB;
     const ratingsRef = ref(db, 'ratings');
@@ -709,33 +748,249 @@ function submitRatingFirebase(value) {
         data.dist = { ...EMPTY_DIST, ...data.dist };
         data.dist[value] = (data.dist[value] || 0) + 1;
         return data;
-    }).catch(err => {
-        console.error('Não foi possível salvar a avaliação no Firebase:', err);
-    });
-    // Não precisa re-renderizar aqui: o listener onValue (abaixo) já
-    // atualiza a tela sozinho assim que a transação é confirmada.
+    }).catch(err => console.error('Não foi possível salvar a avaliação no Firebase:', err));
+    // A tela atualiza sozinha via onValue (initRatingFirebaseSync)
 }
 
 function initRatingFirebaseSync() {
     const { ref, onValue, db } = window.__ratingsDB;
-    const ratingsRef = ref(db, 'ratings');
-
-    // Atualiza a tela em tempo real — pra QUALQUER pessoa no site,
-    // sempre que qualquer cliente (em qualquer aparelho) avaliar
-    onValue(ratingsRef, (snapshot) => {
-        const data = snapshot.val() || { count: 0, sum: 0, dist: { ...EMPTY_DIST } };
-        renderRatingData(data);
+    onValue(ref(db, 'ratings'), (snapshot) => {
+        renderRatingData(snapshot.val() || { count: 0, sum: 0, dist: { ...EMPTY_DIST } });
     });
 }
 
+// --- Modo Firebase: autenticação com Google ---
+function ensureSignedIn() {
+    const { auth, GoogleAuthProvider, signInWithPopup } = window.__ratingsDB;
+    if (currentReviewUser) return Promise.resolve(currentReviewUser);
+    return signInWithPopup(auth, new GoogleAuthProvider()).then(result => result.user);
+}
+
+function renderAuthArea() {
+    const authWrap = document.getElementById('reviews-auth');
+    if (!authWrap) return;
+
+    if (currentReviewUser) {
+        const name = escapeHtml(currentReviewUser.displayName || 'Você');
+        const photo = currentReviewUser.photoURL;
+        authWrap.innerHTML = `
+            <div class="reviews-user-chip">
+                ${photo ? `<img src="${escapeHtml(photo)}" alt="">` : ''}
+                <span>${name}</span>
+                <button type="button" class="reviews-signout-btn" id="reviews-signout-btn">Sair</button>
+            </div>
+        `;
+        document.getElementById('reviews-signout-btn')?.addEventListener('click', () => {
+            window.__ratingsDB.signOut(window.__ratingsDB.auth);
+        });
+    } else {
+        authWrap.innerHTML = `
+            <button type="button" class="reviews-google-btn" id="reviews-google-btn">
+                <i class="fa-brands fa-google" aria-hidden="true"></i> Entrar com Google pra comentar
+            </button>
+        `;
+        document.getElementById('reviews-google-btn')?.addEventListener('click', () => {
+            ensureSignedIn().catch(err => {
+                console.error('Erro ao entrar com Google:', err);
+                showFeedback('Não foi possível entrar com o Google agora.');
+            });
+        });
+    }
+}
+
+function initAuth() {
+    const { auth, onAuthStateChanged } = window.__ratingsDB;
+    onAuthStateChanged(auth, (user) => {
+        currentReviewUser = user;
+        renderAuthArea();
+        renderReviewsWall(lastReviewsSnapshot); // reprocessa pra mostrar/ocultar editar+excluir
+    });
+}
+
+// --- Modo Firebase: publicar comentário ---
+function submitReviewFirebase(stars, comment) {
+    const { ref, push, serverTimestamp, db } = window.__ratingsDB;
+    if (!currentReviewUser) return;
+
+    push(ref(db, 'reviews'), {
+        uid: currentReviewUser.uid,
+        name: currentReviewUser.displayName || 'Cliente',
+        photoURL: currentReviewUser.photoURL || null,
+        stars,
+        comment: comment.slice(0, COMMENT_MAX_LENGTH),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    }).catch(err => {
+        console.error('Não foi possível publicar o comentário:', err);
+        showFeedback('Sua nota foi salva, mas o comentário não pôde ser publicado.');
+    });
+}
+
+// --- Mural de comentários ---
+let lastReviewsSnapshot = {};
+
+function initReviewsWall() {
+    const wall = document.getElementById('reviews-wall');
+    if (!wall) return;
+    wall.hidden = false;
+
+    const { ref, onValue, query, limitToLast, db } = window.__ratingsDB;
+    const reviewsQuery = query(ref(db, 'reviews'), limitToLast(30));
+
+    onValue(reviewsQuery, (snapshot) => {
+        lastReviewsSnapshot = snapshot.val() || {};
+        renderReviewsWall(lastReviewsSnapshot);
+    });
+}
+
+function renderReviewsWall(data) {
+    const list = document.getElementById('reviews-list');
+    const empty = document.getElementById('reviews-empty');
+    if (!list) return;
+
+    const entries = Object.entries(data || {}).reverse(); // mais recentes primeiro
+
+    if (entries.length === 0) {
+        list.innerHTML = '';
+        if (empty) list.appendChild(empty);
+        else list.innerHTML = '<p class="reviews-empty">Nenhum comentário ainda. Seja o primeiro!</p>';
+        return;
+    }
+
+    list.innerHTML = entries.map(([id, review]) => renderReviewCard(id, review)).join('');
+
+    // Reata os eventos dos botões (innerHTML recria os elementos)
+    list.querySelectorAll('[data-edit-id]').forEach(btn => {
+        btn.addEventListener('click', () => startEditReview(btn.dataset.editId));
+    });
+    list.querySelectorAll('[data-delete-id]').forEach(btn => {
+        btn.addEventListener('click', () => deleteReview(btn.dataset.deleteId, Number(btn.dataset.stars)));
+    });
+}
+
+function renderReviewCard(id, review) {
+    const isOwner = currentReviewUser && review.uid === currentReviewUser.uid;
+    const name = escapeHtml(review.name || 'Cliente');
+    const comment = escapeHtml(review.comment || '');
+    const stars = Number(review.stars) || 0;
+    const starsStr = '★★★★★'.slice(0, stars) + '☆☆☆☆☆'.slice(0, 5 - stars);
+    const dateStr = formatReviewDate(review.updatedAt || review.createdAt);
+    const wasEdited = review.updatedAt && review.createdAt && review.updatedAt !== review.createdAt;
+
+    const avatar = review.photoURL
+        ? `<img class="review-avatar" src="${escapeHtml(review.photoURL)}" alt="">`
+        : `<span class="review-avatar-fallback">${name.charAt(0).toUpperCase()}</span>`;
+
+    const actions = isOwner ? `
+        <div class="review-actions">
+            <button type="button" class="review-action-btn" data-edit-id="${id}">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i> Editar
+            </button>
+            <button type="button" class="review-action-btn is-danger" data-delete-id="${id}" data-stars="${stars}">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir
+            </button>
+        </div>
+    ` : '';
+
+    return `
+        <div class="review-card" id="review-${id}">
+            ${avatar}
+            <div class="review-body">
+                <div class="review-head">
+                    <span class="review-name">${name}</span>
+                    <span class="review-date">${dateStr}</span>
+                </div>
+                <div class="review-stars" aria-hidden="true">${starsStr}</div>
+                <p class="review-text${wasEdited ? ' is-edited' : ''}">${comment}</p>
+                ${actions}
+            </div>
+        </div>
+    `;
+}
+
+function startEditReview(id) {
+    const review = lastReviewsSnapshot[id];
+    const card = document.getElementById(`review-${id}`);
+    if (!review || !card) return;
+
+    const body = card.querySelector('.review-body');
+    const existing = body.querySelector('.review-edit-box');
+    if (existing) return; // já está editando
+
+    const box = document.createElement('div');
+    box.className = 'review-edit-box';
+    box.innerHTML = `
+        <textarea class="rating-textarea" maxlength="${COMMENT_MAX_LENGTH}">${escapeHtml(review.comment || '')}</textarea>
+        <div class="review-edit-actions">
+            <button type="button" class="review-edit-save">Salvar</button>
+            <button type="button" class="review-edit-cancel">Cancelar</button>
+        </div>
+    `;
+    body.appendChild(box);
+
+    const textarea = box.querySelector('textarea');
+    textarea.focus();
+
+    box.querySelector('.review-edit-cancel').addEventListener('click', () => box.remove());
+    box.querySelector('.review-edit-save').addEventListener('click', () => {
+        const newComment = textarea.value.trim();
+        if (!newComment) return;
+        const { ref, update, serverTimestamp, db } = window.__ratingsDB;
+        update(ref(db, `reviews/${id}`), {
+            comment: newComment.slice(0, COMMENT_MAX_LENGTH),
+            updatedAt: serverTimestamp()
+        }).then(() => {
+            showFeedback('Comentário atualizado!');
+        }).catch(err => {
+            console.error('Não foi possível editar o comentário:', err);
+            showFeedback('Não foi possível salvar a edição.');
+        });
+        box.remove();
+    });
+}
+
+function deleteReview(id, stars) {
+    if (!confirm('Tem certeza que quer excluir seu comentário? Essa ação não pode ser desfeita.')) return;
+
+    const { ref, remove, runTransaction, db } = window.__ratingsDB;
+
+    remove(ref(db, `reviews/${id}`)).catch(err => {
+        console.error('Não foi possível excluir o comentário:', err);
+        showFeedback('Não foi possível excluir o comentário.');
+    });
+
+    // Reverte a contribuição desse comentário na média geral
+    if (stars > 0) {
+        runTransaction(ref(db, 'ratings'), (current) => {
+            if (!current) return current;
+            current.count = Math.max(0, (current.count || 0) - 1);
+            current.sum = Math.max(0, (current.sum || 0) - stars);
+            current.dist = current.dist || {};
+            current.dist[stars] = Math.max(0, (current.dist[stars] || 0) - 1);
+            return current;
+        }).catch(err => console.error('Não foi possível atualizar a média após exclusão:', err));
+    }
+}
+
+// --- Inicialização geral do widget ---
 function initRatingWidget() {
     const starsWrap = document.getElementById('rating-stars');
+    const commentInput = document.getElementById('rating-comment-input');
+    const commentCount = document.getElementById('rating-comment-count');
+    const commentBox = document.getElementById('rating-comment-box');
+    const submitBtn = document.getElementById('rating-submit-btn');
     if (!starsWrap) return;
 
-    if (window.__ratingsDB) {
+    const firebaseReady = !!window.__ratingsDB;
+
+    if (firebaseReady) {
         initRatingFirebaseSync();
+        initAuth();
+        initReviewsWall();
     } else {
         renderRatingData(getLocalRatingData());
+        // Sem Firebase não dá pra garantir dono do comentário com segurança
+        if (commentBox) commentBox.hidden = true;
     }
 
     const myRating = getMyRating();
@@ -747,26 +1002,36 @@ function initRatingWidget() {
     starsWrap.addEventListener('click', (e) => {
         const star = e.target.closest('.rating-star');
         if (!star) return;
-        submitRating(Number(star.dataset.value));
+        selectDraftStars(Number(star.dataset.value));
     });
 
-    // Preview visual ao passar o mouse (desktop)
     starsWrap.addEventListener('mouseover', (e) => {
         const star = e.target.closest('.rating-star');
         if (!star) return;
         paintStars(Number(star.dataset.value));
     });
-    starsWrap.addEventListener('mouseleave', () => paintStars(0));
+    starsWrap.addEventListener('mouseleave', () => paintStars(draftRatingValue));
 
-    // Preview visual ao navegar pelas estrelas com o teclado
     starsWrap.addEventListener('focusin', (e) => {
         const star = e.target.closest('.rating-star');
         if (!star) return;
         paintStars(Number(star.dataset.value));
     });
     starsWrap.addEventListener('focusout', (e) => {
-        if (!starsWrap.contains(e.relatedTarget)) paintStars(0);
+        if (!starsWrap.contains(e.relatedTarget)) paintStars(draftRatingValue);
     });
+
+    if (commentInput && commentCount) {
+        commentInput.addEventListener('input', () => {
+            commentCount.textContent = `${commentInput.value.length}/${COMMENT_MAX_LENGTH}`;
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+            submitRating(draftRatingValue, commentInput ? commentInput.value : '');
+        });
+    }
 }
 
 // ============================================================
