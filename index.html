@@ -66,7 +66,7 @@
 
     <a class="skip-link" href="#main-content">Pular para o cardápio</a>
 
-    <a href="https://instagram.com/chicosbrasa" target="_blank" rel="noopener noreferrer"
+    <a href="https://instagram.com/chicobrasa" target="_blank" rel="noopener noreferrer"
        class="instagram-float-btn" aria-label="Abrir Instagram do Chicos Brasa (nova aba)">
         <i class="fa-brands fa-instagram" aria-hidden="true"></i>
     </a>
@@ -198,6 +198,18 @@
                         placeholder="Quer contar como foi sua experiência? (opcional — entra com Google pra publicar)"
                         maxlength="280"
                         rows="3"></textarea>
+
+                    <div class="rating-photo-row">
+                        <label class="rating-photo-btn" id="rating-photo-label">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i> Adicionar foto
+                            <input type="file" id="rating-photo-input" accept="image/*" hidden>
+                        </label>
+                        <div class="rating-photo-preview" id="rating-photo-preview" hidden>
+                            <img id="rating-photo-preview-img" alt="Prévia da foto anexada">
+                            <button type="button" class="rating-photo-remove" id="rating-photo-remove" aria-label="Remover foto">×</button>
+                        </div>
+                    </div>
+
                     <div class="rating-comment-footer">
                         <span class="rating-comment-count" id="rating-comment-count">0/280</span>
                         <button type="button" class="rating-submit-btn" id="rating-submit-btn" disabled>
@@ -231,6 +243,9 @@
             <div class="reviews-list" id="reviews-list">
                 <p class="reviews-empty" id="reviews-empty">Nenhum comentário ainda. Seja o primeiro!</p>
             </div>
+            <button type="button" class="reviews-load-more" id="reviews-load-more" hidden>
+                Ver mais comentários <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
         </div>
     </section>
 
@@ -280,7 +295,7 @@
                 <a href="#menu-grid" class="promo-toast-btn promo-toast-btn--order">
                     <i class="fa-solid fa-burger" aria-hidden="true"></i> Ver cardápio
                 </a>
-                <a href="https://instagram.com/chicosbrasa" target="_blank" rel="noopener noreferrer" class="promo-toast-btn promo-toast-btn--insta">
+                <a href="https://instagram.com/chicobrasa" target="_blank" rel="noopener noreferrer" class="promo-toast-btn promo-toast-btn--insta">
                     <i class="fa-brands fa-instagram" aria-hidden="true"></i> Seguir
                 </a>
             </div>
@@ -303,6 +318,8 @@
          5. Crie uma chave reCAPTCHA v3 em google.com/recaptcha/admin/create
          6. App Check → Introdução → seu app Web → reCAPTCHA v3 → cole a
             chave do site (Site Key) → substitua RECAPTCHA_SITE_KEY abaixo
+         7. Storage → Vamos começar → publique as regras de Storage do chat
+            (permite anexar foto nos comentários)
 
          Enquanto firebaseConfig.apiKey começar com "COLE_AQUI", o site
          funciona em modo local (por navegador), sem quebrar nada.
@@ -317,6 +334,9 @@
         import {
             getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+        import {
+            getStorage, ref as storageRef, uploadBytes, getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAUB30RyX3bg9A73K2Jlj2a-cn0Sp9tIy8",
@@ -348,10 +368,12 @@
 
             const db = getDatabase(app);
             const auth = getAuth(app);
+            const storage = getStorage(app);
             // Disponibiliza pro script.js (script clássico, carregado depois)
             window.__ratingsDB = {
                 ref, onValue, runTransaction, push, update, remove, query, limitToLast, serverTimestamp, db,
-                auth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+                auth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+                storage, storageRef, uploadBytes, getDownloadURL
             };
         } else {
             console.info("Firebase não configurado — avaliações funcionando em modo local (por navegador). Veja as instruções nos comentários deste arquivo.");
