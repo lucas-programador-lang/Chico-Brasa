@@ -596,9 +596,20 @@ function saveLocalRating(value) {
 }
 
 // --- Renderização (comum aos dois modos) ---
+// Texto qualitativo com base na média (referência comum em widgets de review)
+function getQualifierLabel(average) {
+    if (average >= 4.5) return 'Excelente!';
+    if (average >= 3.5) return 'Muito bom';
+    if (average >= 2.5) return 'Bom';
+    if (average >= 1.5) return 'Regular';
+    return 'Precisa melhorar';
+}
+
 function renderRatingData({ count, sum, dist }) {
+    const scoreRing = document.getElementById('rating-score-ring');
     const scoreNumber = document.getElementById('rating-score-number');
     const scoreStars = document.getElementById('rating-score-stars');
+    const scoreQualifier = document.getElementById('rating-score-qualifier');
     const scoreCount = document.getElementById('rating-score-count');
     if (!scoreNumber || !scoreStars || !scoreCount) return;
 
@@ -607,7 +618,9 @@ function renderRatingData({ count, sum, dist }) {
     if (count === 0) {
         scoreNumber.textContent = '–';
         scoreStars.textContent = '☆☆☆☆☆';
+        if (scoreQualifier) scoreQualifier.textContent = '';
         scoreCount.textContent = 'Ainda sem avaliações';
+        if (scoreRing) scoreRing.style.setProperty('--pct', 0);
     } else {
         const roundedAvg = Math.round(average);
         scoreNumber.classList.remove('live-update');
@@ -615,7 +628,10 @@ function renderRatingData({ count, sum, dist }) {
         scoreNumber.textContent = average.toFixed(1);
         scoreNumber.classList.add('live-update');
         scoreStars.textContent = '★★★★★'.slice(0, roundedAvg) + '☆☆☆☆☆'.slice(0, 5 - roundedAvg);
+        if (scoreQualifier) scoreQualifier.textContent = getQualifierLabel(average);
         scoreCount.textContent = `${count} ${count === 1 ? 'avaliação' : 'avaliações'}`;
+        // Preenche o anel de progresso proporcional à média (0–5 → 0–100%)
+        if (scoreRing) scoreRing.style.setProperty('--pct', ((average / 5) * 100).toFixed(1));
     }
 
     // Barras de distribuição (5★ no topo, 1★ embaixo) — o requestAnimationFrame
@@ -647,6 +663,7 @@ function paintStars(upTo) {
 function lockRatingWidget(myRating) {
     const card = document.querySelector('.rating-card');
     const starsWrap = document.getElementById('rating-stars');
+    const thanksStars = document.getElementById('rating-thanks-stars');
     if (!card || !starsWrap) return;
 
     card.classList.add('has-rated');
@@ -659,6 +676,10 @@ function lockRatingWidget(myRating) {
         star.setAttribute('aria-checked', String(filled));
         star.tabIndex = -1;
     });
+
+    if (thanksStars) {
+        thanksStars.textContent = '★★★★★'.slice(0, myRating) + '☆☆☆☆☆'.slice(0, 5 - myRating);
+    }
 }
 
 function submitRating(value) {
