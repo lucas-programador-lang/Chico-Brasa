@@ -240,12 +240,24 @@
                     </button>
                 </div>
             </div>
+
+            <div class="reviews-sort-tabs" id="reviews-sort-tabs" role="tablist" aria-label="Ordenar comentários">
+                <button type="button" class="reviews-sort-tab active" data-sort="top" role="tab" aria-selected="true">Principais</button>
+                <button type="button" class="reviews-sort-tab" data-sort="recent" role="tab" aria-selected="false">Mais recentes</button>
+            </div>
+
             <div class="reviews-list" id="reviews-list">
                 <p class="reviews-empty" id="reviews-empty">Nenhum comentário ainda. Seja o primeiro!</p>
             </div>
-            <button type="button" class="reviews-load-more" id="reviews-load-more" hidden>
-                Ver mais comentários <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-            </button>
+
+            <div class="reviews-load-actions">
+                <button type="button" class="reviews-load-more" id="reviews-load-more" hidden>
+                    Ver mais comentários <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="reviews-load-less" id="reviews-load-less" hidden>
+                    Ver menos <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
     </section>
 
