@@ -1003,7 +1003,14 @@ function toggleOwnerHeart(id) {
     const nowHearted = !(review && review.ownerHeart);
     const { ref, update, db } = window.__ratingsDB;
 
-    update(ref(db, `reviews/${id}`), { ownerHeart: nowHearted }).catch(err => {
+    // Guarda a foto do dono JUNTO com o coração — assim qualquer visitante
+    // vê o selo certinho, mesmo sem estar logado (a foto do seu Gmail só
+    // fica disponível no navegador enquanto VOCÊ está logado, então precisa
+    // ser salva no banco no momento em que você marca o coração).
+    update(ref(db, `reviews/${id}`), {
+        ownerHeart: nowHearted,
+        ownerHeartPhotoURL: nowHearted ? (currentReviewUser.photoURL || null) : null
+    }).catch(err => {
         console.error('Não foi possível atualizar o coração do dono:', err);
         showFeedback('Não foi possível salvar essa ação.');
     });
@@ -1226,8 +1233,17 @@ function renderReviewCard(id, review) {
     // O selo "❤️ Chicos Brasa curtiu" aparece pra QUALQUER visitante quando
     // marcado. Já o botão pra marcar/desmarcar só aparece pra você mesmo,
     // logado com a conta configurada em OWNER_UID.
+    const ownerPhotoHtml = review.ownerHeartPhotoURL
+        ? `<img src="${escapeHtml(review.ownerHeartPhotoURL)}" alt="" class="review-owner-heart-avatar">`
+        : `<span class="review-owner-heart-avatar review-owner-heart-avatar--fallback"><i class="fa-solid fa-fire" aria-hidden="true"></i></span>`;
+
     const heartBadge = isHearted
-        ? `<span class="review-owner-heart-badge"><i class="fa-solid fa-heart" aria-hidden="true"></i> Chicos Brasa curtiu</span>`
+        ? `<span class="review-owner-heart-badge">
+               ${ownerPhotoHtml}
+               <span class="review-owner-heart-text">
+                   <i class="fa-solid fa-heart" aria-hidden="true"></i> Chicos Brasa curtiu isso
+               </span>
+           </span>`
         : '';
 
     const ownerHeartBtn = isOwnerAccount ? `
