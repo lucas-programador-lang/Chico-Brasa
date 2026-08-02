@@ -2559,15 +2559,51 @@ a, button, input, select, textarea, [tabindex] {
 .review-owner-heart-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin: 6px 0 4px;
-    padding: 4px 12px;
+    gap: 9px;
+    margin: 8px 0 6px;
+    padding: 4px 16px 4px 4px;
     border-radius: var(--radius-pill);
-    background: rgba(234, 29, 44, 0.12);
+    background: linear-gradient(120deg, rgba(234, 29, 44, 0.14), rgba(240, 192, 96, 0.10));
     border: 1px solid rgba(234, 29, 44, 0.3);
-    color: #ff6b6b;
-    font-size: 0.74rem;
+    box-shadow: 0 4px 16px rgba(234, 29, 44, 0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.review-owner-heart-avatar {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bg-void);
+    /* anel dourado, mesmo tratamento da logo do site */
+    box-shadow:
+        0 0 0 2px var(--bg-void),
+        0 0 0 3.5px var(--gold-warm),
+        0 0 8px rgba(255,80,0,0.35);
+}
+
+.review-owner-heart-avatar--fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fire-core);
+    font-size: 0.7rem;
+}
+
+.review-owner-heart-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-blaze);
+    font-size: 0.76rem;
     font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.review-owner-heart-text i {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    filter: drop-shadow(0 0 4px rgba(255,107,107,0.5));
 }
 
 .review-owner-heart-btn.is-hearted { color: #ff6b6b; }
