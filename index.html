@@ -293,6 +293,18 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-content-3d confirm-modal-content" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+            <span class="confirm-modal-icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+            <h2 id="confirm-title">Tem certeza?</h2>
+            <p id="confirm-message">Essa ação não pode ser desfeita.</p>
+            <div class="confirm-modal-actions">
+                <button type="button" class="confirm-modal-cancel" id="confirm-modal-cancel">Cancelar</button>
+                <button type="button" class="confirm-modal-ok" id="confirm-modal-ok">Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <div class="feedback-toast" id="feedback-toast" role="status" aria-live="polite" aria-atomic="true">
         <span class="feedback-toast-icon" id="feedback-toast-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
         <span class="feedback-toast-text" id="feedback-toast-text"></span>
