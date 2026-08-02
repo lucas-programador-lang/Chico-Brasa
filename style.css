@@ -2461,6 +2461,86 @@ a, button, input, select, textarea, [tabindex] {
     .reviews-sort-tab { margin-right: 14px; font-size: 0.8rem; }
 }
 
+/* --- Responder comentários --- */
+.review-replies-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--gold-warm);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.78rem;
+    cursor: pointer;
+    margin-top: 10px;
+    padding: 0;
+}
+
+.review-replies-toggle i {
+    font-size: 0.7rem;
+    transition: transform var(--duration-fast) var(--ease-smooth);
+}
+
+.review-replies-toggle.is-open i {
+    transform: rotate(180deg);
+}
+
+.review-replies {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+    padding-left: 16px;
+    border-left: 2px solid var(--border-dim);
+}
+
+.reply-card {
+    display: flex;
+    gap: 10px;
+}
+
+.reply-avatar,
+.reply-avatar-fallback {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.reply-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--gold-deep), var(--gold-warm));
+    color: var(--bg-void);
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+.reply-body { flex: 1; min-width: 0; }
+.reply-body .review-text { font-size: 0.86rem; }
+.reply-body .review-name { font-size: 0.85rem; }
+.reply-body .review-actions { margin-top: 6px; }
+
+.reply-composer {
+    margin-top: 12px;
+    padding-left: 16px;
+}
+
+.reply-textarea {
+    min-height: 50px;
+    font-size: 0.86rem;
+}
+
+.reply-composer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
 /* ============================================================
    CONFIRM MODAL — substitui o confirm() nativo do navegador
    ============================================================ */
