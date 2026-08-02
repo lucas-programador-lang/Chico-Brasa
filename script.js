@@ -569,7 +569,7 @@ const COMMENT_MAX_LENGTH = 280;
 // de coração nos comentários. Troque pelo UID real depois de criar o Gmail
 // e entrar no site com ele (veja instruções: Firebase Console → Authentication
 // → aba Users → coluna "User UID" da sua conta).
-const OWNER_UID = "COLE_AQUI_SEU_UID";
+const OWNER_UID = "GBFid0dg46MuNefOP6YZp5G55Df2";
 
 let draftRatingValue = 0;
 let currentReviewUser = null; // preenchido pelo onAuthStateChanged
