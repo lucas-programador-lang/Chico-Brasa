@@ -565,6 +565,12 @@ const RATING_KEYS = {
 const EMPTY_DIST = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 const COMMENT_MAX_LENGTH = 280;
 
+// UID da conta Google "dona" do site — só essa conta vê e pode usar o botão
+// de coração nos comentários. Troque pelo UID real depois de criar o Gmail
+// e entrar no site com ele (veja instruções: Firebase Console → Authentication
+// → aba Users → coluna "User UID" da sua conta).
+const OWNER_UID = "COLE_AQUI_SEU_UID";
+
 let draftRatingValue = 0;
 let currentReviewUser = null; // preenchido pelo onAuthStateChanged
 
@@ -987,6 +993,22 @@ function toggleLike(id) {
         .finally(() => pendingLikes.delete(id));
 }
 
+// Coração exclusivo do dono do site — protegido de verdade nas regras do
+// Firebase (só a conta com uid === OWNER_UID consegue escrever nesse campo),
+// não é só um botão escondido na tela.
+function toggleOwnerHeart(id) {
+    if (!window.__ratingsDB || !currentReviewUser || currentReviewUser.uid !== OWNER_UID) return;
+
+    const review = lastReviewsSnapshot[id];
+    const nowHearted = !(review && review.ownerHeart);
+    const { ref, update, db } = window.__ratingsDB;
+
+    update(ref(db, `reviews/${id}`), { ownerHeart: nowHearted }).catch(err => {
+        console.error('Não foi possível atualizar o coração do dono:', err);
+        showFeedback('Não foi possível salvar essa ação.');
+    });
+}
+
 function initReviewsWall() {
     const wall = document.getElementById('reviews-wall');
     if (!wall) return;
@@ -1022,6 +1044,97 @@ function initReviewsWall() {
             renderReviewsWall(lastReviewsSnapshot);
         });
     });
+
+    initReviewsListDelegation();
+}
+
+// Um único listener delegado no container da lista, montado UMA vez.
+// Como usa e.target.closest(...), continua funcionando mesmo quando o
+// innerHTML de qualquer parte (um card, a lista de respostas, etc.) é
+// recriado depois — diferente de addEventListener direto em cada botão,
+// que se perde toda vez que o HTML é substituído.
+function initReviewsListDelegation() {
+    const list = document.getElementById('reviews-list');
+    if (!list || list.dataset.delegated) return;
+    list.dataset.delegated = 'true';
+
+    list.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-edit-id]');
+        if (editBtn) return startEditReview(editBtn.dataset.editId);
+
+        const deleteBtn = e.target.closest('[data-delete-id]');
+        if (deleteBtn) return deleteReview(deleteBtn.dataset.deleteId, Number(deleteBtn.dataset.stars));
+
+        const likeBtn = e.target.closest('[data-like-id]');
+        if (likeBtn) return toggleLike(likeBtn.dataset.likeId);
+
+        const heartBtn = e.target.closest('[data-owner-heart-id]');
+        if (heartBtn) return toggleOwnerHeart(heartBtn.dataset.ownerHeartId);
+
+        const toggleRepliesBtn = e.target.closest('[data-toggle-replies]');
+        if (toggleRepliesBtn) {
+            const box = document.getElementById(`replies-${toggleRepliesBtn.dataset.toggleReplies}`);
+            if (box) {
+                box.hidden = !box.hidden;
+                toggleRepliesBtn.classList.toggle('is-open', !box.hidden);
+            }
+            return;
+        }
+
+        const loadMoreRepliesBtn = e.target.closest('[data-load-more-replies]');
+        if (loadMoreRepliesBtn) {
+            const reviewId = loadMoreRepliesBtn.dataset.loadMoreReplies;
+            visibleRepliesCounts[reviewId] = (visibleRepliesCounts[reviewId] || INITIAL_VISIBLE_REPLIES) + 5;
+            const box = document.getElementById(`replies-${reviewId}`);
+            const review = lastReviewsSnapshot[reviewId];
+            if (box && review) box.innerHTML = renderReplies(reviewId, review.replies || {});
+            return;
+        }
+
+        const replyToggleBtn = e.target.closest('[data-reply-toggle]');
+        if (replyToggleBtn) {
+            const box = document.getElementById(`reply-composer-${replyToggleBtn.dataset.replyToggle}`);
+            if (box) {
+                box.hidden = !box.hidden;
+                if (!box.hidden) box.querySelector('textarea')?.focus();
+            }
+            return;
+        }
+
+        const replyCancelBtn = e.target.closest('[data-reply-cancel]');
+        if (replyCancelBtn) {
+            const box = document.getElementById(`reply-composer-${replyCancelBtn.dataset.replyCancel}`);
+            if (box) { box.hidden = true; box.querySelector('textarea').value = ''; }
+            return;
+        }
+
+        const replySendBtn = e.target.closest('[data-reply-send]');
+        if (replySendBtn) {
+            const reviewId = replySendBtn.dataset.replySend;
+            const textarea = document.getElementById(`reply-input-${reviewId}`);
+            if (!textarea) return;
+            const text = textarea.value;
+            replySendBtn.disabled = true;
+            submitReply(reviewId, text).finally(() => {
+                replySendBtn.disabled = false;
+                const box = document.getElementById(`reply-composer-${reviewId}`);
+                if (box) { box.hidden = true; textarea.value = ''; }
+            });
+            return;
+        }
+
+        const replyEditBtn = e.target.closest('[data-reply-edit]');
+        if (replyEditBtn) {
+            const [reviewId, replyId] = replyEditBtn.dataset.replyEdit.split(':');
+            return startEditReply(reviewId, replyId);
+        }
+
+        const replyDeleteBtn = e.target.closest('[data-reply-delete]');
+        if (replyDeleteBtn) {
+            const [reviewId, replyId] = replyDeleteBtn.dataset.replyDelete.split(':');
+            return deleteReply(reviewId, replyId);
+        }
+    });
 }
 
 function renderReviewsWall(data) {
@@ -1055,70 +1168,6 @@ function renderReviewsWall(data) {
     // Só renderiza os N primeiros — evita lotar a página de comentários
     const visibleEntries = entries.slice(0, visibleReviewsCount);
     list.innerHTML = visibleEntries.map(([id, review]) => renderReviewCard(id, review)).join('');
-
-    // Reata os eventos dos botões (innerHTML recria os elementos)
-    list.querySelectorAll('[data-edit-id]').forEach(btn => {
-        btn.addEventListener('click', () => startEditReview(btn.dataset.editId));
-    });
-    list.querySelectorAll('[data-delete-id]').forEach(btn => {
-        btn.addEventListener('click', () => deleteReview(btn.dataset.deleteId, Number(btn.dataset.stars)));
-    });
-    list.querySelectorAll('[data-like-id]').forEach(btn => {
-        btn.addEventListener('click', () => toggleLike(btn.dataset.likeId));
-    });
-
-    // Mostra/esconde a lista de respostas já publicadas
-    list.querySelectorAll('[data-toggle-replies]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const box = document.getElementById(`replies-${btn.dataset.toggleReplies}`);
-            if (!box) return;
-            box.hidden = !box.hidden;
-            btn.classList.toggle('is-open', !box.hidden);
-        });
-    });
-
-    // Abre/fecha a caixa de "Responder"
-    list.querySelectorAll('[data-reply-toggle]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const box = document.getElementById(`reply-composer-${btn.dataset.replyToggle}`);
-            if (!box) return;
-            box.hidden = !box.hidden;
-            if (!box.hidden) box.querySelector('textarea')?.focus();
-        });
-    });
-    list.querySelectorAll('[data-reply-cancel]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const box = document.getElementById(`reply-composer-${btn.dataset.replyCancel}`);
-            if (box) { box.hidden = true; box.querySelector('textarea').value = ''; }
-        });
-    });
-    list.querySelectorAll('[data-reply-send]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const reviewId = btn.dataset.replySend;
-            const textarea = document.getElementById(`reply-input-${reviewId}`);
-            if (!textarea) return;
-            const text = textarea.value;
-            btn.disabled = true;
-            await submitReply(reviewId, text);
-            btn.disabled = false;
-            const box = document.getElementById(`reply-composer-${reviewId}`);
-            if (box) { box.hidden = true; textarea.value = ''; }
-        });
-    });
-
-    // Editar / excluir uma resposta (chave composta "reviewId:replyId")
-    list.querySelectorAll('[data-reply-edit]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const [reviewId, replyId] = btn.dataset.replyEdit.split(':');
-            startEditReply(reviewId, replyId);
-        });
-    });
-    list.querySelectorAll('[data-reply-delete]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const [reviewId, replyId] = btn.dataset.replyDelete.split(':');
-            deleteReply(reviewId, replyId);
-        });
-    });
 
     const remaining = entries.length - visibleEntries.length;
     if (loadMoreBtn) {
@@ -1171,6 +1220,22 @@ function renderReviewCard(id, review) {
         </button>
     ` : '';
 
+    const isOwnerAccount = currentReviewUser && currentReviewUser.uid === OWNER_UID;
+    const isHearted = !!review.ownerHeart;
+
+    // O selo "❤️ Chicos Brasa curtiu" aparece pra QUALQUER visitante quando
+    // marcado. Já o botão pra marcar/desmarcar só aparece pra você mesmo,
+    // logado com a conta configurada em OWNER_UID.
+    const heartBadge = isHearted
+        ? `<span class="review-owner-heart-badge"><i class="fa-solid fa-heart" aria-hidden="true"></i> Chicos Brasa curtiu</span>`
+        : '';
+
+    const ownerHeartBtn = isOwnerAccount ? `
+        <button type="button" class="review-action-btn review-owner-heart-btn${isHearted ? ' is-hearted' : ''}" data-owner-heart-id="${id}" aria-pressed="${isHearted}">
+            <i class="fa-${isHearted ? 'solid' : 'regular'} fa-heart" aria-hidden="true"></i> ${isHearted ? 'Descurtir' : 'Curtir como dono'}
+        </button>
+    ` : '';
+
     return `
         <div class="review-card" id="review-${id}">
             ${avatar}
@@ -1182,6 +1247,7 @@ function renderReviewCard(id, review) {
                 <div class="review-stars" aria-hidden="true">${starsStr}</div>
                 ${photoHtml}
                 <p class="review-text${wasEdited ? ' is-edited' : ''}">${comment}</p>
+                ${heartBadge}
                 <div class="review-actions">
                     <button type="button" class="review-action-btn review-like-btn${isLiked ? ' is-liked' : ''}" data-like-id="${id}" aria-pressed="${isLiked}">
                         <i class="fa-${isLiked ? 'solid' : 'regular'} fa-thumbs-up" aria-hidden="true"></i>
@@ -1190,6 +1256,7 @@ function renderReviewCard(id, review) {
                     <button type="button" class="review-action-btn" data-reply-toggle="${id}">
                         <i class="fa-solid fa-reply" aria-hidden="true"></i> Responder
                     </button>
+                    ${ownerHeartBtn}
                     ${ownerActions}
                 </div>
 
@@ -1211,10 +1278,25 @@ function renderReviewCard(id, review) {
 }
 
 // --- Respostas aninhadas dentro de cada comentário ---
+const INITIAL_VISIBLE_REPLIES = 3;
+const visibleRepliesCounts = {}; // { reviewId: quantidade visível }
+
 function renderReplies(reviewId, replies) {
     const entries = Object.entries(replies || {})
         .sort(([, a], [, b]) => (a.createdAt || 0) - (b.createdAt || 0)); // mais antiga primeiro
-    return entries.map(([replyId, reply]) => renderReplyCard(reviewId, replyId, reply)).join('');
+
+    const visibleCount = visibleRepliesCounts[reviewId] || INITIAL_VISIBLE_REPLIES;
+    const visibleEntries = entries.slice(0, visibleCount);
+    const remaining = entries.length - visibleEntries.length;
+
+    const cards = visibleEntries.map(([replyId, reply]) => renderReplyCard(reviewId, replyId, reply)).join('');
+    const loadMore = remaining > 0
+        ? `<button type="button" class="review-replies-load-more" data-load-more-replies="${reviewId}">
+               Ver mais respostas (${remaining})
+           </button>`
+        : '';
+
+    return cards + loadMore;
 }
 
 function renderReplyCard(reviewId, replyId, reply) {
