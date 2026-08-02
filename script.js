@@ -945,20 +945,46 @@ function saveLikedReviewIds(set) {
 }
 
 // Curtir é livre (sem login), igual a avaliar com estrelas — só trava
-// pelo navegador pra não deixar a mesma pessoa curtir 100x o mesmo comentário
+// pelo navegador pra não deixar a mesma pessoa curtir 100x o mesmo comentário.
+// pendingLikes evita que um clique duplo dispare duas transações antes da
+// primeira terminar (o que poderia deixar a contagem incorreta).
+const pendingLikes = new Set();
+
 function toggleLike(id) {
     if (!window.__ratingsDB) return;
+    if (pendingLikes.has(id)) return; // já tem uma curtida em andamento pra esse comentário
+
     const { ref, runTransaction, db } = window.__ratingsDB;
     const liked = getLikedReviewIds();
     const alreadyLiked = liked.has(id);
 
+    // Atualiza a tela na hora (otimista), sem esperar o Firebase confirmar
+    if (alreadyLiked) liked.delete(id); else liked.add(id);
+    saveLikedReviewIds(liked);
+
+    const btn = document.querySelector(`[data-like-id="${id}"]`);
+    if (btn) {
+        const nowLiked = !alreadyLiked;
+        btn.classList.toggle('is-liked', nowLiked);
+        btn.setAttribute('aria-pressed', String(nowLiked));
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = `fa-${nowLiked ? 'solid' : 'regular'} fa-thumbs-up`;
+
+        const countSpan = btn.querySelector('span');
+        if (countSpan) {
+            const current = Number(countSpan.textContent) || 0;
+            const next = Math.max(0, current + (nowLiked ? 1 : -1));
+            countSpan.textContent = next > 0 ? next : 'Curtir';
+        }
+    }
+
+    pendingLikes.add(id);
     runTransaction(ref(db, `reviews/${id}/likes`), (current) => {
         const count = current || 0;
         return alreadyLiked ? Math.max(0, count - 1) : count + 1;
-    }).catch(err => console.error('Não foi possível curtir o comentário:', err));
-
-    if (alreadyLiked) liked.delete(id); else liked.add(id);
-    saveLikedReviewIds(liked);
+    })
+        .catch(err => console.error('Não foi possível curtir o comentário:', err))
+        .finally(() => pendingLikes.delete(id));
 }
 
 function initReviewsWall() {
@@ -1147,8 +1173,52 @@ function startEditReview(id) {
     });
 }
 
-function deleteReview(id, stars) {
-    if (!confirm('Tem certeza que quer excluir seu comentário? Essa ação não pode ser desfeita.')) return;
+// ============================================================
+// MODAL DE CONFIRMAÇÃO — substitui o confirm() feio do navegador
+// Uso: const ok = await showConfirmDialog({ title, message, okLabel });
+// ============================================================
+function showConfirmDialog({ title = 'Tem certeza?', message = 'Essa ação não pode ser desfeita.', okLabel = 'Confirmar' } = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const messageEl = document.getElementById('confirm-message');
+        const okBtn = document.getElementById('confirm-modal-ok');
+        const cancelBtn = document.getElementById('confirm-modal-cancel');
+        if (!modal || !okBtn || !cancelBtn) { resolve(window.confirm(message)); return; }
+
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        okBtn.textContent = okLabel;
+        modal.classList.add('open');
+
+        const cleanup = (result) => {
+            modal.classList.remove('open');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            modal.removeEventListener('click', onOverlayClick);
+            document.removeEventListener('keydown', onKeydown);
+            resolve(result);
+        };
+        const onOk = () => cleanup(true);
+        const onCancel = () => cleanup(false);
+        const onOverlayClick = (e) => { if (e.target === modal) cleanup(false); };
+        const onKeydown = (e) => { if (e.key === 'Escape') cleanup(false); };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onOverlayClick);
+        document.addEventListener('keydown', onKeydown);
+        cancelBtn.focus();
+    });
+}
+
+async function deleteReview(id, stars) {
+    const confirmed = await showConfirmDialog({
+        title: 'Excluir comentário?',
+        message: 'Tem certeza que quer excluir seu comentário? Essa ação não pode ser desfeita.',
+        okLabel: 'Excluir'
+    });
+    if (!confirmed) return;
 
     const { ref, remove, runTransaction, db } = window.__ratingsDB;
 
