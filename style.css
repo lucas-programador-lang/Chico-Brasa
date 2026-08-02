@@ -271,9 +271,17 @@ a, button, input, select, textarea, [tabindex] {
 .logo-img {
     width: 150px;
     height: 150px;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center 38%;
     position: relative;
-    filter: drop-shadow(0 14px 24px rgba(0,0,0,0.6));
+    border-radius: 50%;
+    background: var(--bg-void);
+    box-shadow:
+        0 0 0 4px var(--bg-void),
+        0 0 0 7px var(--gold-warm),
+        0 0 0 8px var(--gold-halo),
+        0 0 30px rgba(255,80,0,0.45),
+        0 20px 40px rgba(0,0,0,0.7);
     margin-bottom: 28px;
     animation: floatLogo 7s ease-in-out infinite;
 }
@@ -2451,6 +2459,83 @@ a, button, input, select, textarea, [tabindex] {
     .reviews-load-actions { flex-direction: column; }
     .reviews-sort-tabs { gap: 0; }
     .reviews-sort-tab { margin-right: 14px; font-size: 0.8rem; }
+}
+
+/* ============================================================
+   CONFIRM MODAL — substitui o confirm() nativo do navegador
+   ============================================================ */
+.confirm-modal-content {
+    max-width: 400px;
+    text-align: center;
+    padding: 36px 32px;
+}
+
+.confirm-modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin-bottom: 18px;
+    background: rgba(234, 29, 44, 0.12);
+    border: 1px solid rgba(234, 29, 44, 0.35);
+    color: #ff6b6b;
+    font-size: 1.4rem;
+}
+
+.confirm-modal-content h2 {
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+}
+
+.confirm-modal-content p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 26px;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-modal-cancel,
+.confirm-modal-ok {
+    flex: 1;
+    padding: 13px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-bounce),
+                box-shadow var(--duration-med) var(--ease-smooth);
+}
+
+.confirm-modal-cancel {
+    background: var(--bg-float);
+    color: var(--text-secondary);
+}
+
+.confirm-modal-cancel:hover,
+.confirm-modal-cancel:focus-visible {
+    transform: translateY(-2px);
+}
+
+.confirm-modal-ok {
+    background: linear-gradient(135deg, #ea1d2c, #c0101e);
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(234, 29, 44, 0.3);
+}
+
+.confirm-modal-ok:hover,
+.confirm-modal-ok:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(234, 29, 44, 0.45);
 }
 
 /* ============================================================
