@@ -2559,19 +2559,27 @@ a, button, input, select, textarea, [tabindex] {
 .review-owner-heart-badge {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     margin: 8px 0 6px;
-    padding: 4px 16px 4px 4px;
+    padding: 3px 14px 3px 3px;
     border-radius: var(--radius-pill);
     background: linear-gradient(120deg, rgba(234, 29, 44, 0.14), rgba(240, 192, 96, 0.10));
     border: 1px solid rgba(234, 29, 44, 0.3);
     box-shadow: 0 4px 16px rgba(234, 29, 44, 0.12), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-.review-owner-heart-avatar {
+/* Wrapper: dá o espaço extra pro coraçãozinho não ficar cortado */
+.review-owner-heart-avatar-wrap {
+    position: relative;
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
+}
+
+.review-owner-heart-avatar {
+    display: block;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
     background: var(--bg-void);
@@ -2590,20 +2598,33 @@ a, button, input, select, textarea, [tabindex] {
     font-size: 0.7rem;
 }
 
-.review-owner-heart-text {
-    display: inline-flex;
+/* Coraçãozinho sobreposto no cantinho da foto — igual ao "curtido pelo
+   criador" do YouTube, em vez de um ícone separado ao lado */
+.review-owner-heart-icon {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
     align-items: center;
-    gap: 5px;
-    color: var(--text-blaze);
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.2px;
+    justify-content: center;
+    border-radius: 50%;
+    background: #ff3b30;
+    border: 2.5px solid var(--bg-raised);
+    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.55);
 }
 
-.review-owner-heart-text i {
-    color: #ff6b6b;
-    font-size: 0.8rem;
-    filter: drop-shadow(0 0 4px rgba(255,107,107,0.5));
+.review-owner-heart-icon i {
+    color: #fff;
+    font-size: 0.65rem;
+}
+
+.review-owner-heart-text {
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 }
 
 .review-owner-heart-btn.is-hearted { color: #ff6b6b; }
