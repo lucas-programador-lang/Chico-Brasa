@@ -995,21 +995,25 @@ function toggleLike(id) {
 
 // Coração exclusivo do dono do site — protegido de verdade nas regras do
 // Firebase (só a conta com uid === OWNER_UID consegue escrever nesse campo),
-// não é só um botão escondido na tela.
+// não é só um botão escondido na tela. Grava também QUANDO o dono curtiu
+// (ownerHeartAt), pra exibir a data/hora no selo pra todo mundo ver.
 function toggleOwnerHeart(id) {
     if (!window.__ratingsDB || !currentReviewUser || currentReviewUser.uid !== OWNER_UID) return;
 
     const review = lastReviewsSnapshot[id];
     const nowHearted = !(review && review.ownerHeart);
-    const { ref, update, db } = window.__ratingsDB;
+    const { ref, update, serverTimestamp, db } = window.__ratingsDB;
 
     // Guarda a foto do dono JUNTO com o coração — assim qualquer visitante
     // vê o selo certinho, mesmo sem estar logado (a foto do seu Gmail só
     // fica disponível no navegador enquanto VOCÊ está logado, então precisa
-    // ser salva no banco no momento em que você marca o coração).
+    // ser salva no banco no momento em que você marca o coração). O
+    // ownerHeartAt segue a mesma lógica: é o carimbo de data/hora exato
+    // do clique, salvo no banco pra aparecer pra todos os visitantes.
     update(ref(db, `reviews/${id}`), {
         ownerHeart: nowHearted,
-        ownerHeartPhotoURL: nowHearted ? (currentReviewUser.photoURL || null) : null
+        ownerHeartPhotoURL: nowHearted ? (currentReviewUser.photoURL || null) : null,
+        ownerHeartAt: nowHearted ? serverTimestamp() : null
     }).catch(err => {
         console.error('Não foi possível atualizar o coração do dono:', err);
         showFeedback('Não foi possível salvar essa ação.');
@@ -1082,8 +1086,22 @@ function initReviewsListDelegation() {
         if (toggleRepliesBtn) {
             const box = document.getElementById(`replies-${toggleRepliesBtn.dataset.toggleReplies}`);
             if (box) {
+                const willShow = box.hidden; // estado ANTES de alternar
                 box.hidden = !box.hidden;
-                toggleRepliesBtn.classList.toggle('is-open', !box.hidden);
+                toggleRepliesBtn.classList.toggle('is-open', willShow);
+
+                // O texto do botão precisa refletir a AÇÃO que o próximo
+                // clique vai fazer: se as respostas estão visíveis agora,
+                // o botão tem que dizer "Ocultar" (seta pra cima); se estão
+                // escondidas, tem que dizer a contagem de novo (seta pra
+                // baixo). Antes o texto nunca mudava — só a seta girava
+                // no CSS — e por isso parecia "bagunçado": clicar de novo
+                // parecia não fazer nada porque a legenda ficava igual.
+                const count = Number(toggleRepliesBtn.dataset.replyCount || 0);
+                const icon = '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
+                toggleRepliesBtn.innerHTML = willShow
+                    ? `${icon} Ocultar respostas`
+                    : `${icon} ${count} ${count === 1 ? 'resposta' : 'respostas'}`;
             }
             return;
         }
@@ -1221,7 +1239,7 @@ function renderReviewCard(id, review) {
     const replies = review.replies || {};
     const replyCount = Object.keys(replies).length;
     const repliesToggle = replyCount > 0 ? `
-        <button type="button" class="review-replies-toggle" data-toggle-replies="${id}">
+        <button type="button" class="review-replies-toggle" data-toggle-replies="${id}" data-reply-count="${replyCount}">
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
             ${replyCount} ${replyCount === 1 ? 'resposta' : 'respostas'}
         </button>
@@ -1230,18 +1248,27 @@ function renderReviewCard(id, review) {
     const isOwnerAccount = currentReviewUser && currentReviewUser.uid === OWNER_UID;
     const isHearted = !!review.ownerHeart;
 
-    // O selo "❤️ Chicos Brasa curtiu" aparece pra QUALQUER visitante quando
-    // marcado. Já o botão pra marcar/desmarcar só aparece pra você mesmo,
-    // logado com a conta configurada em OWNER_UID.
-    const ownerPhotoHtml = review.ownerHeartPhotoURL
+    // O selo "Chicos Brasa curtiu" aparece pra QUALQUER visitante quando
+    // marcado, no mesmo estilo "curtido pelo criador" do YouTube: a foto
+    // do dono com um coraçãozinho vermelho sobreposto no canto — em vez
+    // de uma foto solta ao lado do texto, que era como estava antes (o
+    // CSS do selo redondo .review-owner-heart-icon já existia mas nunca
+    // era usado no HTML gerado aqui).
+    const ownerHeartAvatar = review.ownerHeartPhotoURL
         ? `<img src="${escapeHtml(review.ownerHeartPhotoURL)}" alt="" class="review-owner-heart-avatar">`
         : `<span class="review-owner-heart-avatar review-owner-heart-avatar--fallback"><i class="fa-solid fa-fire" aria-hidden="true"></i></span>`;
 
+    const ownerHeartDateStr = review.ownerHeartAt ? formatReviewDate(review.ownerHeartAt) : '';
+
     const heartBadge = isHearted
         ? `<span class="review-owner-heart-badge">
-               ${ownerPhotoHtml}
+               <span class="review-owner-heart-avatar-wrap">
+                   ${ownerHeartAvatar}
+                   <span class="review-owner-heart-icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></span>
+               </span>
                <span class="review-owner-heart-text">
-                   <i class="fa-solid fa-heart" aria-hidden="true"></i> Chicos Brasa curtiu isso
+                   Chicos Brasa curtiu isso
+                   ${ownerHeartDateStr ? `<span class="review-owner-heart-date">${ownerHeartDateStr}</span>` : ''}
                </span>
            </span>`
         : '';
