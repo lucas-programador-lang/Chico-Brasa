@@ -1084,19 +1084,30 @@ function initReviewsListDelegation() {
 
         const toggleRepliesBtn = e.target.closest('[data-toggle-replies]');
         if (toggleRepliesBtn) {
-            const box = document.getElementById(`replies-${toggleRepliesBtn.dataset.toggleReplies}`);
+            const reviewId = toggleRepliesBtn.dataset.toggleReplies;
+            const box = document.getElementById(`replies-${reviewId}`);
             if (box) {
                 const willShow = box.hidden; // estado ANTES de alternar
                 box.hidden = !box.hidden;
                 toggleRepliesBtn.classList.toggle('is-open', willShow);
 
+                // Grava o estado em openRepliesIds — é essa lista que
+                // renderReviewCard consulta pra decidir se o card nasce
+                // aberto ou fechado. Sem isso, um novo snapshot do Firebase
+                // (outra pessoa curtindo, respondendo, etc.) recria o card
+                // do zero sempre fechado, desfazendo o clique do usuário
+                // por trás dos panos — é isso que parecia "não funcionar".
+                if (willShow) {
+                    openRepliesIds.add(reviewId);
+                } else {
+                    openRepliesIds.delete(reviewId);
+                }
+
                 // O texto do botão precisa refletir a AÇÃO que o próximo
                 // clique vai fazer: se as respostas estão visíveis agora,
                 // o botão tem que dizer "Ocultar" (seta pra cima); se estão
                 // escondidas, tem que dizer a contagem de novo (seta pra
-                // baixo). Antes o texto nunca mudava — só a seta girava
-                // no CSS — e por isso parecia "bagunçado": clicar de novo
-                // parecia não fazer nada porque a legenda ficava igual.
+                // baixo).
                 const count = Number(toggleRepliesBtn.dataset.replyCount || 0);
                 const icon = '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
                 toggleRepliesBtn.innerHTML = willShow
@@ -1238,10 +1249,11 @@ function renderReviewCard(id, review) {
 
     const replies = review.replies || {};
     const replyCount = Object.keys(replies).length;
+    const repliesAreOpen = openRepliesIds.has(id);
     const repliesToggle = replyCount > 0 ? `
-        <button type="button" class="review-replies-toggle" data-toggle-replies="${id}" data-reply-count="${replyCount}">
+        <button type="button" class="review-replies-toggle${repliesAreOpen ? ' is-open' : ''}" data-toggle-replies="${id}" data-reply-count="${replyCount}">
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-            ${replyCount} ${replyCount === 1 ? 'resposta' : 'respostas'}
+            ${repliesAreOpen ? 'Ocultar respostas' : `${replyCount} ${replyCount === 1 ? 'resposta' : 'respostas'}`}
         </button>
     ` : '';
 
@@ -1304,7 +1316,7 @@ function renderReviewCard(id, review) {
                 </div>
 
                 ${repliesToggle}
-                <div class="review-replies" id="replies-${id}" hidden>
+                <div class="review-replies" id="replies-${id}"${repliesAreOpen ? '' : ' hidden'}>
                     ${renderReplies(id, replies)}
                 </div>
 
@@ -1323,6 +1335,13 @@ function renderReviewCard(id, review) {
 // --- Respostas aninhadas dentro de cada comentário ---
 const INITIAL_VISIBLE_REPLIES = 3;
 const visibleRepliesCounts = {}; // { reviewId: quantidade visível }
+
+// Quais reviewIds estão com as respostas ABERTAS. Sem isso, toda vez que
+// o Firebase manda um novo snapshot (outra pessoa curtiu, respondeu, etc.)
+// o card inteiro é recriado do zero com "hidden" de novo — fechando as
+// respostas na cara do usuário mesmo sem ele ter clicado em nada. Aqui a
+// gente lembra o estado e reaplica ele na hora de montar o HTML.
+const openRepliesIds = new Set();
 
 function renderReplies(reviewId, replies) {
     const entries = Object.entries(replies || {})
