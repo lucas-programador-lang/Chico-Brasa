@@ -2487,12 +2487,15 @@ a, button, input, select, textarea, [tabindex] {
 }
 
 .review-replies {
-    display: flex;
     flex-direction: column;
     gap: 12px;
     margin-top: 12px;
     padding-left: 16px;
     border-left: 2px solid var(--border-dim);
+}
+
+.review-replies:not([hidden]) {
+    display: flex;
 }
 
 .reply-card {
